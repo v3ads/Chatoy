@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-surface text-text-primary antialiased;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-md border border-surface-border bg-surface px-2.5 py-2 text-text-primary outline-none placeholder:text-text-muted focus:border-accent;
+  }
+}
+
+/* Thin scrollbars for the chat transcript. */
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  @apply bg-surface-border rounded-full;
+}

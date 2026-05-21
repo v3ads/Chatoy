@@ -15,7 +15,13 @@ const PHASE_LABEL: Record<string, string> = {
   refine: "Refining",
 };
 
-export default function Chat() {
+export default function Chat({
+  userEmail,
+  onLogout,
+}: {
+  userEmail?: string | null;
+  onLogout?: () => void;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -128,6 +134,11 @@ export default function Chat() {
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
+          {userEmail && (
+            <span className="hidden text-text-muted sm:inline" title={userEmail}>
+              {userEmail}
+            </span>
+          )}
           <button
             onClick={newChat}
             className="rounded-md border border-surface-border px-3 py-1.5 text-text-secondary hover:text-text-primary"
@@ -140,6 +151,14 @@ export default function Chat() {
           >
             Settings
           </button>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="rounded-md border border-surface-border px-3 py-1.5 text-text-secondary hover:text-text-primary"
+            >
+              Log out
+            </button>
+          )}
         </div>
       </header>
 

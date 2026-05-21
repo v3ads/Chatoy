@@ -1,9 +1,11 @@
 // Browser-side client for the MythoStack backend.
 //
-// Auth note: the backend verifies a Supabase-style bearer JWT. For now the
-// token is supplied in the UI (Settings) and stored in localStorage; in
-// production this comes from the Supabase session. If the backend runs with
-// CHATOY_AUTH_DISABLED=true, no token is needed.
+// Auth: requests carry a bearer JWT the backend verifies against Supabase. The
+// token is the live Supabase session access token when logged in; otherwise it
+// falls back to a "dev token" pasted in Settings (handy when the backend runs
+// with CHATOY_AUTH_DISABLED=true or you're testing without login).
+
+import { supabase } from "@/lib/supabase";
 
 const API_URL_KEY = "mythostack.apiUrl";
 const TOKEN_KEY = "mythostack.token";
@@ -30,6 +32,16 @@ export function setConfig(config: Partial<AppConfig>): void {
   if (typeof window === "undefined") return;
   if (config.apiUrl !== undefined) localStorage.setItem(API_URL_KEY, config.apiUrl);
   if (config.token !== undefined) localStorage.setItem(TOKEN_KEY, config.token);
+}
+
+// The bearer token for a request: prefer the live Supabase session (auto
+// refreshed), else the manually configured dev token.
+async function getAccessToken(): Promise<string> {
+  if (supabase) {
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.access_token) return data.session.access_token;
+  }
+  return getConfig().token;
 }
 
 export interface ChatMessage {
@@ -84,7 +96,8 @@ export async function streamChat(
   },
   handlers: StreamHandlers,
 ): Promise<void> {
-  const { apiUrl, token } = getConfig();
+  const { apiUrl } = getConfig();
+  const token = await getAccessToken();
   let res: Response;
   try {
     res = await fetch(`${apiUrl}/chat/stream`, {

@@ -8,9 +8,6 @@ from app.agents.state import Message
 class ChatRequest(BaseModel):
     session_id: str = Field(..., description="Conversation id; threads state across turns.")
     message: str = Field(..., min_length=1)
-    user_id: str | None = Field(
-        None, description="Used to load the saved voice profile and Stacking Wins history."
-    )
     business_profile: dict | None = Field(
         None, description="Set once at session start; persisted on the session state."
     )
@@ -26,7 +23,6 @@ class ChatResponse(BaseModel):
 
 
 class VoiceAnalyzeRequest(BaseModel):
-    user_id: str
     samples: list[str] = Field(..., min_length=1)
 
 
@@ -37,7 +33,6 @@ class VoiceProfileResponse(BaseModel):
 
 
 class AssetCreateRequest(BaseModel):
-    user_id: str
     asset_type: str
     marketing_angle: str = ""
     content: str = ""

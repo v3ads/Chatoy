@@ -5,16 +5,17 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
+from tests.conftest import TEST_JWT_SECRET, auth_header
 
 
 @pytest.fixture
 def client():
-    # Force offline FakeLLM regardless of any ambient API key.
-    app = create_app(Settings(use_fake_llm=True))
+    # Force offline FakeLLM and enable auth with the test signing secret.
+    app = create_app(Settings(use_fake_llm=True, jwt_secret=TEST_JWT_SECRET))
     return TestClient(app)
 
 
-def test_health(client):
+def test_health_is_public(client):
     r = client.get("/health")
     assert r.status_code == 200
     assert r.json()["status"] == "ok"
@@ -22,20 +23,15 @@ def test_health(client):
 
 
 def test_chat_diagnose_then_handoff_flow(client):
-    r1 = client.post(
-        "/chat",
-        json={"session_id": "s1", "user_id": "u1", "message": "I need marketing help"},
-    )
+    h = auth_header("u1")
+    r1 = client.post("/chat", json={"session_id": "s1", "message": "I need marketing help"}, headers=h)
     assert r1.status_code == 200
     body1 = r1.json()
     assert body1["next_step"] == "diagnose"
     assert "?" in body1["reply"]
     assert body1["current_strategy"] is None
 
-    r2 = client.post(
-        "/chat",
-        json={"session_id": "s1", "user_id": "u1", "message": "More trial signups"},
-    )
+    r2 = client.post("/chat", json={"session_id": "s1", "message": "More trial signups"}, headers=h)
     body2 = r2.json()
     assert body2["next_step"] == "refine"
     assert body2["current_strategy"]["asset_type"] == "email_promo"
@@ -57,63 +53,45 @@ def _parse_sse(text: str) -> list[tuple[str, str]]:
 
 
 def test_chat_stream_emits_tokens_and_final(client):
-    # First turn streams the CRO question.
-    r1 = client.post(
-        "/chat/stream",
-        json={"session_id": "s2", "user_id": "u9", "message": "help me grow"},
-    )
+    h = auth_header("u9")
+    r1 = client.post("/chat/stream", json={"session_id": "s2", "message": "help me grow"}, headers=h)
     assert r1.status_code == 200
     events = _parse_sse(r1.text)
     kinds = [k for k, _ in events]
-    assert "token" in kinds
-    assert "final" in kinds
-    assert "done" in kinds
-    tokens = "".join(d for k, d in events if k == "token")
-    assert "?" in tokens
+    assert "token" in kinds and "final" in kinds and "done" in kinds
+    assert "?" in "".join(d for k, d in events if k == "token")
 
-    # Second turn triggers handoff -> streams the written copy, never the marker.
-    r2 = client.post(
-        "/chat/stream",
-        json={"session_id": "s2", "user_id": "u9", "message": "more signups"},
-    )
+    r2 = client.post("/chat/stream", json={"session_id": "s2", "message": "more signups"}, headers=h)
     events2 = _parse_sse(r2.text)
     tokens2 = "".join(d for k, d in events2 if k == "token")
     assert "PROMPT_HANDOFF" not in tokens2
-    final = [d for k, d in events2 if k == "final"][0]
-    final_payload = json.loads(final)
-    assert final_payload["current_strategy"]["asset_type"] == "email_promo"
+    final = json.loads([d for k, d in events2 if k == "final"][0])
+    assert final["current_strategy"]["asset_type"] == "email_promo"
 
 
 def test_voice_analyze_and_get(client):
-    r = client.post(
-        "/voice/analyze",
-        json={"user_id": "u2", "samples": ["Here's the thing. I write short. Punchy."]},
-    )
+    h = auth_header("u2")
+    r = client.post("/voice/analyze", json={"samples": ["Here's the thing. I write short."]}, headers=h)
     assert r.status_code == 200
-    body = r.json()
-    assert body["profile"]  # non-empty fingerprint
-    assert body["rendered"]
+    assert r.json()["profile"]
+    assert r.json()["rendered"]
 
-    r2 = client.get("/voice/u2")
-    assert r2.status_code == 200
-
-    assert client.get("/voice/does-not-exist").status_code == 404
+    assert client.get("/voice/me", headers=h).status_code == 200
+    # A different user has no profile yet.
+    assert client.get("/voice/me", headers=auth_header("nobody")).status_code == 404
 
 
 def test_assets_log_and_list(client):
+    h = auth_header("u3")
     r = client.post(
         "/assets",
-        json={
-            "user_id": "u3",
-            "asset_type": "email_promo",
-            "marketing_angle": "speed",
-            "metrics": {"opens": 10},
-        },
+        json={"asset_type": "email_promo", "marketing_angle": "speed", "metrics": {"opens": 10}},
+        headers=h,
     )
     assert r.status_code == 200
     assert r.json()["asset_type"] == "email_promo"
+    assert r.json()["user_id"] == "u3"
 
-    r2 = client.get("/assets/u3")
-    body = r2.json()
+    body = client.get("/assets", headers=h).json()
     assert len(body["assets"]) == 1
     assert "opens=10" in body["summary"]

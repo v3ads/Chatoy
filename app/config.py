@@ -21,6 +21,15 @@ class Settings(BaseSettings):
     # Leave unset to use the in-memory stores (tests / offline dev).
     database_url: str | None = None
 
+    # Auth. Verifies Supabase-style bearer JWTs (HS256 shared secret by default;
+    # this is the Supabase project "JWT secret"). Endpoints fail closed if no
+    # secret is set, unless auth_disabled is True (local dev only).
+    jwt_secret: str | None = None
+    jwt_audience: str = "authenticated"
+    jwt_algorithms: str = "HS256"
+    auth_disabled: bool = False
+    dev_user_id: str = "dev-user"
+
     # Per-role models. The strategist and the copywriter can run on different
     # models; voice analysis is a cheap structured-extraction job.
     cro_model: str = "claude-sonnet-4-6"

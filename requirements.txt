@@ -13,8 +13,8 @@ sqlalchemy>=2.0
 alembic>=1.13
 psycopg[binary]>=3.1
 
-# Auth
-pyjwt>=2.8
+# Auth (crypto extra enables ES256/RS256 for Supabase asymmetric signing keys)
+pyjwt[crypto]>=2.8
 
 # Dev / test
 httpx>=0.27

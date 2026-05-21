@@ -21,9 +21,14 @@ class Settings(BaseSettings):
     # Leave unset to use the in-memory stores (tests / offline dev).
     database_url: str | None = None
 
-    # Auth. Verifies Supabase-style bearer JWTs (HS256 shared secret by default;
-    # this is the Supabase project "JWT secret"). Endpoints fail closed if no
-    # secret is set, unless auth_disabled is True (local dev only).
+    # Auth. Verifies Supabase bearer JWTs. Two modes:
+    #   1. Asymmetric signing keys (current Supabase default): set supabase_url
+    #      (or jwks_url) and tokens are verified against the project's public
+    #      JWKS using ES256/RS256.
+    #   2. Legacy HS256 shared secret: set jwt_secret.
+    # Endpoints fail closed if neither is configured, unless auth_disabled.
+    supabase_url: str | None = None
+    jwks_url: str | None = None
     jwt_secret: str | None = None
     jwt_audience: str = "authenticated"
     jwt_algorithms: str = "HS256"
@@ -53,6 +58,23 @@ class Settings(BaseSettings):
     def use_database(self) -> bool:
         """True when a database is configured; otherwise in-memory stores."""
         return bool(self.database_url)
+
+    @property
+    def resolved_jwks_url(self) -> str | None:
+        """JWKS endpoint for asymmetric verification, derived from supabase_url
+        if not given explicitly."""
+        if self.jwks_url:
+            return self.jwks_url
+        if self.supabase_url:
+            return f"{self.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+        return None
+
+    @property
+    def jwt_issuer(self) -> str | None:
+        """Expected token issuer when a Supabase URL is configured."""
+        if self.supabase_url:
+            return f"{self.supabase_url.rstrip('/')}/auth/v1"
+        return None
 
     @property
     def cors_origin_list(self) -> list[str]:

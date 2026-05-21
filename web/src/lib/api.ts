@@ -1,12 +1,12 @@
-// Browser-side client for the Chatoy backend.
+// Browser-side client for the MythoStack backend.
 //
 // Auth note: the backend verifies a Supabase-style bearer JWT. For now the
 // token is supplied in the UI (Settings) and stored in localStorage; in
 // production this comes from the Supabase session. If the backend runs with
 // CHATOY_AUTH_DISABLED=true, no token is needed.
 
-const API_URL_KEY = "chatoy.apiUrl";
-const TOKEN_KEY = "chatoy.token";
+const API_URL_KEY = "mythostack.apiUrl";
+const TOKEN_KEY = "mythostack.token";
 
 const DEFAULT_API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";

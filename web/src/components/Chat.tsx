@@ -122,7 +122,7 @@ export default function Chat() {
     <main className="mx-auto flex h-screen max-w-3xl flex-col px-4">
       <header className="flex items-center justify-between border-b border-surface-border py-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">Chatoy</h1>
+          <h1 className="text-lg font-semibold tracking-tight">MythoStack</h1>
           <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
             {PHASE_LABEL[phase] ?? phase}
           </span>
@@ -226,7 +226,7 @@ export default function Chat() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           rows={1}
-          placeholder="Message Chatoy…"
+          placeholder="Message MythoStack…"
           className="max-h-40 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-text-muted"
         />
         <button

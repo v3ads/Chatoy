@@ -65,7 +65,7 @@ def create_app(
         rag=rag,
     )
 
-    app = FastAPI(title="Chatoy", version="0.1.0")
+    app = FastAPI(title="MythoStack", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,

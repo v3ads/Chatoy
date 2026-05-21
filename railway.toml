@@ -1,0 +1,9 @@
+# Railway build/deploy config for the backend (root Dockerfile).
+# The frontend (web/) deploys separately on Vercel.
+[build]
+builder = "dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

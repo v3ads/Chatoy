@@ -23,6 +23,26 @@ class MarketingAsset:
     )
 
 
+def summarize_assets(assets: list[MarketingAsset]) -> str:
+    """A compact, model-readable digest of past assets and their results.
+
+    Shared by every AssetLog implementation so the CRO sees identical context
+    regardless of backing store.
+    """
+    if not assets:
+        return ""
+    lines = [f"{len(assets)} prior asset(s):"]
+    for a in assets:
+        metrics = (
+            ", ".join(f"{k}={v}" for k, v in a.metrics.items())
+            if a.metrics
+            else "no metrics reported"
+        )
+        angle = f" — angle: {a.marketing_angle}" if a.marketing_angle else ""
+        lines.append(f"- {a.asset_type}{angle} ({metrics})")
+    return "\n".join(lines)
+
+
 class AssetLog(Protocol):
     def add(self, asset: MarketingAsset) -> MarketingAsset: ...
 
@@ -45,17 +65,4 @@ class InMemoryAssetLog:
         return list(self._by_user.get(user_id, []))
 
     def summarize(self, user_id: str) -> str:
-        """A compact, model-readable digest of past assets and their results."""
-        assets = self._by_user.get(user_id, [])
-        if not assets:
-            return ""
-        lines = [f"{len(assets)} prior asset(s):"]
-        for a in assets:
-            metrics = (
-                ", ".join(f"{k}={v}" for k, v in a.metrics.items())
-                if a.metrics
-                else "no metrics reported"
-            )
-            angle = f" — angle: {a.marketing_angle}" if a.marketing_angle else ""
-            lines.append(f"- {a.asset_type}{angle} ({metrics})")
-        return "\n".join(lines)
+        return summarize_assets(self._by_user.get(user_id, []))

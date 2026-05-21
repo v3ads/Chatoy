@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str | None = None
 
+    # SQLAlchemy URL, e.g. postgresql+psycopg://user:pass@host:5432/chatoy
+    # Leave unset to use the in-memory stores (tests / offline dev).
+    database_url: str | None = None
+
     # Per-role models. The strategist and the copywriter can run on different
     # models; voice analysis is a cheap structured-extraction job.
     cro_model: str = "claude-sonnet-4-6"
@@ -35,6 +39,11 @@ class Settings(BaseSettings):
     def offline(self) -> bool:
         """True when no real model can be reached, so we use the FakeLLM."""
         return self.use_fake_llm or not self.anthropic_api_key
+
+    @property
+    def use_database(self) -> bool:
+        """True when a database is configured; otherwise in-memory stores."""
+        return bool(self.database_url)
 
     @property
     def cors_origin_list(self) -> list[str]:

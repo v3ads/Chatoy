@@ -20,11 +20,11 @@ from app.models import (
     VoiceAnalyzeRequest,
     VoiceProfileResponse,
 )
+from app.db.factory import build_stores
 from app.orchestrator import Orchestrator
-from app.services.memory import AssetLog, InMemoryAssetLog, MarketingAsset
+from app.services.memory import AssetLog, MarketingAsset
 from app.services.rag import FrameworkRetriever, InMemoryFrameworkRetriever
 from app.services.voice_profile import (
-    InMemoryVoiceProfileStore,
     VoiceProfileStore,
     analyze_voice,
     render_voice_profile,
@@ -46,10 +46,13 @@ def create_app(
 ) -> FastAPI:
     settings = settings or get_settings()
 
-    asset_log = asset_log or InMemoryAssetLog()
+    if voice_store is None or asset_log is None or session_store is None:
+        default_voice, default_assets, default_sessions = build_stores(settings)
+        voice_store = voice_store or default_voice
+        asset_log = asset_log or default_assets
+        session_store = session_store or default_sessions
+
     rag = rag or InMemoryFrameworkRetriever()
-    voice_store = voice_store or InMemoryVoiceProfileStore()
-    session_store = session_store or SessionStore()
     voice_llm = voice_llm or build_llm(settings, role="voice")
     orchestrator = orchestrator or Orchestrator(
         build_llm(settings, role="cro"),

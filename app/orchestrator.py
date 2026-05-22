@@ -46,7 +46,11 @@ class Orchestrator:
         if not user_id:
             return
         
-        row = self._credits.get(user_id)
+        # We need to get the email from the state or context if possible
+        # For now, we'll check the state metadata
+        email = state.get("user_email")
+        
+        row = self._credits.get(user_id, email=email)
         if row.credits_balance <= 0:
             raise ValueError("Insufficient credits to run campaign engine.")
 

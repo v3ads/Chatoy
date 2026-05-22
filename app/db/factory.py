@@ -11,7 +11,7 @@ from typing import Protocol, runtime_checkable
 
 @runtime_checkable
 class CreditStore(Protocol):
-    def get(self, user_id: str): ...
+    def get(self, user_id: str, email: str | None = None): ...
     def deduct(self, user_id: str, amount: float) -> float: ...
     def add(self, user_id: str, amount: float) -> float: ...
     def set_auto_recharge(self, user_id: str, enabled: bool) -> None: ...
@@ -21,8 +21,16 @@ class InMemoryCreditStore:
         self._credits = {}
         self._auto = {}
 
-    def get(self, user_id: str):
+    def get(self, user_id: str, email: str | None = None):
         from app.db.models import CreditProfileRow
+        # God Mode for Admin
+        if email == "vipaymanshalaby@gmail.com":
+            return CreditProfileRow(
+                user_id=user_id,
+                credits_balance=999999.0,
+                auto_recharge_enabled=False
+            )
+
         return CreditProfileRow(
             user_id=user_id, 
             credits_balance=self._credits.get(user_id, 10.0),

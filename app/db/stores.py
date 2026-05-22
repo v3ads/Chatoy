@@ -91,7 +91,15 @@ class SqlCreditStore:
     def __init__(self, session_factory: sessionmaker) -> None:
         self._sf = session_factory
 
-    def get(self, user_id: str) -> CreditProfileRow:
+    def get(self, user_id: str, email: str | None = None) -> CreditProfileRow:
+        # God Mode for Admin
+        if email == "vipaymanshalaby@gmail.com":
+            return CreditProfileRow(
+                user_id=user_id,
+                credits_balance=999999.0,
+                auto_recharge_enabled=False
+            )
+
         with self._sf() as session:
             row = session.get(CreditProfileRow, user_id)
             if row is None:

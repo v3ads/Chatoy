@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     jwt_algorithms: str = "HS256"
     auth_disabled: bool = False
     dev_user_id: str = "dev-user"
+    admin_email: str = "vipaymanshalaby@gmail.com"
 
     # Per-role models. The strategist and the copywriter can run on different
     # models; voice analysis is a cheap structured-extraction job.

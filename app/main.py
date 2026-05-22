@@ -102,15 +102,18 @@ def create_app(
         # tenant can never read or resume another's conversation.
         return f"{user_id}:{session_id}"
 
-    def _prepare_state(req: ChatRequest, user_id: str) -> tuple[AgentState, int, str]:
-        skey = _session_key(user_id, req.session_id)
+    def _prepare_state(
+        req: ChatRequest, user: Principal
+    ) -> tuple[AgentState, int, str]:
+        skey = _session_key(user.user_id, req.session_id)
         state: AgentState = dict(session_store.get(skey))
         messages = list(state.get("messages", []))
-        state["user_id"] = user_id
+        state["user_id"] = user.user_id
+        state["user_email"] = user.email
         if req.business_profile is not None:
             state["business_profile"] = req.business_profile
         if not state.get("voice_profile"):
-            profile = voice_store.get(user_id)
+            profile = voice_store.get(user.user_id)
             if profile:
                 state["voice_profile"] = render_voice_profile(profile)
         messages.append({"role": "user", "content": req.message})
@@ -142,7 +145,7 @@ def create_app(
     def chat(
         req: ChatRequest, user: Principal = Depends(current_user)
     ) -> ChatResponse:
-        state, prefix_len, skey = _prepare_state(req, user.user_id)
+        state, prefix_len, skey = _prepare_state(req, user)
         final = orchestrator.run(state)
         return _finish(req, final, prefix_len, skey)
 
@@ -150,7 +153,7 @@ def create_app(
     async def chat_stream(
         req: ChatRequest, user: Principal = Depends(current_user)
     ) -> EventSourceResponse:
-        state, prefix_len, skey = _prepare_state(req, user.user_id)
+        state, prefix_len, skey = _prepare_state(req, user)
 
         async def event_gen() -> AsyncIterator[dict]:
             async for kind, payload in orchestrator.stream(state):
@@ -221,7 +224,7 @@ def create_app(
 
     @app.get("/credits", response_model=CreditResponse)
     def get_credits(user: Principal = Depends(current_user)) -> CreditResponse:
-        row = credit_store.get(user.user_id)
+        row = credit_store.get(user.user_id, email=user.email)
         return CreditResponse(
             user_id=user.user_id,
             credits_balance=row.credits_balance,

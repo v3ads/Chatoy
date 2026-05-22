@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     auth_disabled: bool = False
     dev_user_id: str = "dev-user"
     admin_email: str = "vipaymanshalaby@gmail.com"
+    brevo_api_key: str | None = None
+    sender_email: str = "ayman@mythostack.com"
+    sender_name: str = "Ayman from MythoStack"
 
     # Per-role models. The strategist and the copywriter can run on different
     # models; voice analysis is a cheap structured-extraction job.

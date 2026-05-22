@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { getConfig } from "@/lib/api";
 
 type Mode = "signin" | "signup";
 
@@ -29,6 +30,22 @@ export default function AuthForm() {
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
+        
+        // Notify backend to send Brevo verification email
+        if (data.user) {
+          const { apiUrl } = getConfig();
+          const token = data.session?.access_token;
+          if (token) {
+            await fetch(`${apiUrl}/auth/notify-signup`, {
+              method: "POST",
+              headers: { 
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+              }
+            }).catch(console.error);
+          }
+        }
+
         if (data.session) {
           router.replace("/chat");
         } else {

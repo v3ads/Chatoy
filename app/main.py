@@ -29,6 +29,7 @@ from app.orchestrator import Orchestrator
 from app.services.memory import AssetLog, MarketingAsset
 from app.services.rag import FrameworkRetriever, InMemoryFrameworkRetriever
 from app.services.stripe import StripeService
+from app.services.email import EmailService
 from app.services.voice_profile import (
     VoiceProfileStore,
     analyze_voice,
@@ -50,6 +51,7 @@ def create_app(
     credit_store: CreditStore | None = None,
     rag: FrameworkRetriever | None = None,
     stripe_service: StripeService | None = None,
+    email_service: EmailService | None = None,
     auth: JWTAuth | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
@@ -64,6 +66,7 @@ def create_app(
 
     rag = rag or InMemoryFrameworkRetriever()
     stripe_service = stripe_service or StripeService(settings, credit_store)
+    email_service = email_service or EmailService(settings)
     voice_llm = voice_llm or build_llm(settings, role="voice")
     orchestrator = orchestrator or Orchestrator(
         build_llm(settings, role="architect"),
@@ -90,6 +93,7 @@ def create_app(
     app.state.session_store = session_store
     app.state.credit_store = credit_store
     app.state.stripe_service = stripe_service
+    app.state.email_service = email_service
     app.state.auth = auth
 
     def current_user(
@@ -237,6 +241,12 @@ def create_app(
     ) -> dict:
         credit_store.set_auto_recharge(user.user_id, req.enabled)
         return {"status": "ok", "auto_recharge_enabled": req.enabled}
+
+    @app.post("/auth/notify-signup")
+    async def notify_signup(user: Principal = Depends(current_user)):
+        """Triggered by frontend after a new Supabase signup."""
+        email_service.send_verification_email(user.email)
+        return {"status": "email_sent"}
 
     @app.post("/webhooks/stripe")
     async def stripe_webhook(request: Request):

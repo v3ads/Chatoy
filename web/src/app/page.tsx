@@ -146,7 +146,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col rounded-2xl border-2 border-accent bg-gradient-to-b from-[#1F1740] to-surface-card p-8 text-center ring-1 ring-accent/20">
                 <h3 className="text-lg font-semibold">Pro</h3>
-                <div className="my-6 text-5xl font-bold text-text-primary">$99<span className="text-lg font-normal text-text-muted">/mo</span></div>
+                <div className="my-6 text-5xl font-bold text-text-primary">$69<span className="text-lg font-normal text-text-muted">/mo</span></div>
                 <p className="mb-8 text-sm text-text-secondary">Unlimited campaigns. Voice training. Full campaign builder. Priority support.</p>
                 <Link href="/login" className="mt-auto rounded-lg bg-accent px-5 py-2.5 text-center font-semibold text-surface transition-colors hover:bg-accent-dim">Get Started</Link>
               </div>

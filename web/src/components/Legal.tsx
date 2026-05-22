@@ -13,11 +13,7 @@ export function LegalShell({
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
       <p className="mt-2 text-sm text-text-muted">Last updated: {updated}</p>
-      <p className="mt-4 rounded-md border border-surface-border bg-surface-elevated/50 px-4 py-3 text-sm text-text-muted">
-        This document is a good-faith starting template tailored to MythoStack, not
-        legal advice. Have it reviewed by qualified counsel — and confirm your legal
-        entity name and governing jurisdiction — before launch.
-      </p>
+
       <div className="mt-8 space-y-4 leading-relaxed text-text-secondary">
         {children}
       </div>

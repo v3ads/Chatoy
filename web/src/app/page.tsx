@@ -211,3 +211,4 @@ export default function Home() {
 }
 // deployment trigger: Fri May 22 15:03:37 UTC 2026
 // deployment trigger 2: Fri May 22 15:21:37 UTC 2026
+// pricing update v2: Fri May 22 15:40:16 UTC 2026

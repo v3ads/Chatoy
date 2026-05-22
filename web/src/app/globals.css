@@ -15,8 +15,9 @@ body {
   @apply bg-surface text-text-secondary antialiased;
 }
 
-h1, h2, h3, .font-serif {
-  @apply font-serif text-text-primary;
+h1, h2, h3 {
+  @apply text-text-primary;
+  font-family: var(--font-serif), Georgia, serif;
 }
 
 @layer components {

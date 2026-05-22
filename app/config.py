@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     # Force the deterministic offline LLM even when a key is present.
     use_fake_llm: bool = False
 
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,https://mythostack.com"
 
     @property
     def offline(self) -> bool:

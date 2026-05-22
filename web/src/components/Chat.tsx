@@ -41,9 +41,18 @@ export default function Chat({
 
   useEffect(() => {
     setSessionId(crypto.randomUUID());
-    const cfg = getConfig();
-    setApiUrl(cfg.apiUrl);
-    setToken(cfg.token);
+    // In production, always use the env-provided API URL and clear any stale localStorage
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isProduction) {
+      const productionUrl = process.env.NEXT_PUBLIC_API_URL || 'https://mythostack-production.up.railway.app';
+      setApiUrl(productionUrl);
+      setConfig({ apiUrl: productionUrl });
+      setToken('');
+    } else {
+      const cfg = getConfig();
+      setApiUrl(cfg.apiUrl);
+      setToken(cfg.token);
+    }
   }, []);
 
   useEffect(() => {
@@ -110,11 +119,16 @@ export default function Chat({
         onError: (message: string) => {
           let userMessage = message;
           if (message.includes("503")) {
-            userMessage = "The architect is offline. Please check engine configuration.";
+            userMessage = "The architect is temporarily offline. Retrying...";
           } else if (message.includes("401")) {
             userMessage = "Session expired. Please log in again.";
           } else if (message.includes("Failed to fetch")) {
-            userMessage = `Could not connect to the growth engine at ${apiUrl}.`;
+            // In production, don't show the technical error to users
+            if (process.env.NODE_ENV === 'production') {
+              userMessage = "The architect is connecting. Please try again.";
+            } else {
+              userMessage = `Could not connect to the growth engine at ${apiUrl}.`;
+            }
           }
           setError(userMessage);
           setMessages((m) => (m[m.length - 1]?.content === "" ? m.slice(0, -1) : m));
@@ -262,6 +276,14 @@ export default function Chat({
               className="mt-2 text-xs font-bold uppercase tracking-widest text-accent underline hover:no-underline"
             >
               Reconfigure Engine
+            </button>
+          )}
+          {process.env.NODE_ENV === "production" && (
+            <button 
+              onClick={() => void send()}
+              className="mt-2 text-xs font-bold uppercase tracking-widest text-accent underline hover:no-underline"
+            >
+              Try Again
             </button>
           )}
         </div>

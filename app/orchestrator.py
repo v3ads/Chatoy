@@ -9,6 +9,7 @@ from app.agents.state import AgentState
 from app.llm.base import LLMClient, StreamingTap
 from app.services.memory import AssetLog
 from app.services.rag import FrameworkRetriever
+from app.db.factory import CreditStore
 
 
 class Orchestrator:
@@ -27,16 +28,30 @@ class Orchestrator:
         *,
         memory: AssetLog | None = None,
         rag: FrameworkRetriever | None = None,
+        credits: CreditStore | None = None,
     ) -> None:
         self._cro_llm = cro_llm
         self._shepherd_llm = shepherd_llm or cro_llm
         self._memory = memory
         self._rag = rag
+        self._credits = credits
         self._graph = build_graph(
             self._cro_llm, self._shepherd_llm, memory=memory, rag=rag
         )
 
+    def _check_credits(self, state: AgentState) -> None:
+        if self._credits is None:
+            return
+        user_id = state.get("user_id")
+        if not user_id:
+            return
+        
+        row = self._credits.get(user_id)
+        if row.credits_balance <= 0:
+            raise ValueError("Insufficient credits to run campaign engine.")
+
     def run(self, state: AgentState) -> AgentState:
+        self._check_credits(state)
         return self._graph.invoke(state)
 
     async def stream(
@@ -44,6 +59,12 @@ class Orchestrator:
     ) -> AsyncIterator[tuple[str, object]]:
         """Yield ("token", text) events as the turn is generated, then a single
         ("final", state) event with the completed state (or ("error", msg))."""
+        try:
+            self._check_credits(state)
+        except Exception as e:
+            yield "error", str(e)
+            return
+
         queue: asyncio.Queue[tuple[str, object]] = asyncio.Queue()
         loop = asyncio.get_running_loop()
 

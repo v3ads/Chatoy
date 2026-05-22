@@ -21,8 +21,10 @@ from app.models import (
     ChatResponse,
     VoiceAnalyzeRequest,
     VoiceProfileResponse,
+    CreditResponse,
+    AutoRechargeRequest,
 )
-from app.db.factory import build_stores
+from app.db.factory import build_stores, CreditStore
 from app.orchestrator import Orchestrator
 from app.services.memory import AssetLog, MarketingAsset
 from app.services.rag import FrameworkRetriever, InMemoryFrameworkRetriever
@@ -44,17 +46,19 @@ def create_app(
     voice_store: VoiceProfileStore | None = None,
     asset_log: AssetLog | None = None,
     session_store: SessionStore | None = None,
+    credit_store: CreditStore | None = None,
     rag: FrameworkRetriever | None = None,
     auth: JWTAuth | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     auth = auth or build_auth(settings)
 
-    if voice_store is None or asset_log is None or session_store is None:
-        default_voice, default_assets, default_sessions = build_stores(settings)
+    if voice_store is None or asset_log is None or session_store is None or credit_store is None:
+        default_voice, default_assets, default_sessions, default_credits = build_stores(settings)
         voice_store = voice_store or default_voice
         asset_log = asset_log or default_assets
         session_store = session_store or default_sessions
+        credit_store = credit_store or default_credits
 
     rag = rag or InMemoryFrameworkRetriever()
     voice_llm = voice_llm or build_llm(settings, role="voice")
@@ -63,6 +67,7 @@ def create_app(
         build_llm(settings, role="writer"),
         memory=asset_log,
         rag=rag,
+        credits=credit_store,
     )
 
     app = FastAPI(title="MythoStack", version="0.1.0")
@@ -80,6 +85,7 @@ def create_app(
     app.state.voice_store = voice_store
     app.state.asset_log = asset_log
     app.state.session_store = session_store
+    app.state.credit_store = credit_store
     app.state.auth = auth
 
     def current_user(
@@ -208,6 +214,22 @@ def create_app(
             assets=[AssetResponse(**a.__dict__) for a in assets],
             summary=asset_log.summarize(user.user_id),
         )
+
+    @app.get("/credits", response_model=CreditResponse)
+    def get_credits(user: Principal = Depends(current_user)) -> CreditResponse:
+        row = credit_store.get(user.user_id)
+        return CreditResponse(
+            user_id=user.user_id,
+            credits_balance=row.credits_balance,
+            auto_recharge_enabled=row.auto_recharge_enabled,
+        )
+
+    @app.post("/credits/auto-recharge")
+    def set_auto_recharge(
+        req: AutoRechargeRequest, user: Principal = Depends(current_user)
+    ) -> dict:
+        credit_store.set_auto_recharge(user.user_id, req.enabled)
+        return {"status": "ok", "auto_recharge_enabled": req.enabled}
 
     return app
 

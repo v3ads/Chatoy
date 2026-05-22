@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Integer, String, Text
+from sqlalchemy import JSON, Integer, String, Text, Float, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -41,4 +41,13 @@ class SessionRow(Base):
 
     session_id: Mapped[str] = mapped_column(String(255), primary_key=True)
     state: Mapped[dict] = mapped_column(JSONType, nullable=False, default=dict)
+    updated_at: Mapped[str] = mapped_column(String(40), default=_now_iso, onupdate=_now_iso)
+
+
+class CreditProfileRow(Base):
+    __tablename__ = "credit_profiles"
+
+    user_id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    credits_balance: Mapped[float] = mapped_column(Float, default=10.0)  # Initial free credits
+    auto_recharge_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     updated_at: Mapped[str] = mapped_column(String(40), default=_now_iso, onupdate=_now_iso)

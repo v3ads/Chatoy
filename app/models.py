@@ -52,3 +52,13 @@ class AssetListResponse(BaseModel):
     user_id: str
     assets: list[AssetResponse]
     summary: str
+
+
+class CreditResponse(BaseModel):
+    user_id: str
+    credits_balance: float
+    auto_recharge_enabled: bool
+
+
+class AutoRechargeRequest(BaseModel):
+    enabled: bool

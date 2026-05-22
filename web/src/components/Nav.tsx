@@ -12,6 +12,7 @@ export default function Nav() {
         <nav className="hidden items-center gap-8 text-sm font-medium text-text-secondary md:flex">
           <Link href="/#how" className="hover:text-text-primary transition-colors">How it works</Link>
           <Link href="/#pricing" className="hover:text-text-primary transition-colors">Pricing</Link>
+          <Link href="/voice" className="hover:text-text-primary transition-colors">Voice</Link>
           <Link href="/login" className="hover:text-text-primary transition-colors">Log in</Link>
           <Link href="/login" className="rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-surface transition-colors hover:bg-accent-dim">
             Get Early Access

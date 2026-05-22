@@ -155,3 +155,34 @@ export async function streamChat(
     }
   }
 }
+
+export interface VoiceProfileResponse {
+  user_id: string;
+  profile: Record<string, string>;
+  rendered: string;
+}
+
+export async function getVoiceProfile(): Promise<VoiceProfileResponse | null> {
+  const { apiUrl } = getConfig();
+  const token = await getAccessToken();
+  const res = await fetch(`${apiUrl}/voice/me`, {
+    headers: authHeaders(token),
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function analyzeVoice(samples: string[]): Promise<VoiceProfileResponse> {
+  const { apiUrl } = getConfig();
+  const token = await getAccessToken();
+  const res = await fetch(`${apiUrl}/voice/analyze`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ samples }),
+  });
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.detail || "Failed to analyze voice");
+  }
+  return res.json();
+}

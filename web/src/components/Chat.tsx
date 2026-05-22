@@ -146,6 +146,12 @@ export default function Chat({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/voice"
+            className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
+          >
+            Voice
+          </Link>
           <button
             onClick={newChat}
             className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"

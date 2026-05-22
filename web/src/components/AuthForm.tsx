@@ -48,79 +48,84 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <h1 className="text-2xl font-semibold tracking-tight">
+    <div className="w-full max-w-sm rounded-2xl border border-surface-border bg-surface-card p-10 shadow-2xl">
+      <Link href="/" className="mb-8 block font-serif text-2xl font-bold tracking-tight text-text-primary text-center">
+        Mytho<span className="text-accent">Stack</span>
+      </Link>
+      
+      <h1 className="font-serif text-3xl font-bold tracking-tight text-text-primary">
         {mode === "signin" ? "Log in" : "Create your account"}
       </h1>
-      <p className="mt-1 text-sm text-text-muted">
-        to <span className="text-text-secondary">Mytho<span className="text-accent">Stack</span></span>
+      <p className="mt-2 text-sm text-text-secondary">
+        Enter your credentials to access the architect.
       </p>
 
       {!isSupabaseConfigured && (
-        <p className="mt-4 rounded-md border border-yellow-900/60 bg-yellow-950/30 px-3 py-2 text-sm text-yellow-300">
-          Login isn&apos;t configured in this environment yet. You can still use the
-          app via a dev token in the chat Settings.
+        <p className="mt-4 rounded-md border border-accent/20 bg-accent/5 px-3 py-2 text-xs text-accent">
+          Waitlist mode active. Use the dev token in chat settings if you have access.
         </p>
       )}
 
-      <form onSubmit={submit} className="mt-6 space-y-3">
+      <form onSubmit={submit} className="mt-8 space-y-4">
         <div>
-          <label className="mb-1 block text-xs text-text-muted">Email</label>
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted">Email Address</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="input"
-            placeholder="you@company.com"
+            className="w-full rounded-lg border border-surface-border bg-surface px-4 py-3 text-text-primary outline-none focus:border-accent transition-colors"
+            placeholder="name@company.com"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-text-muted">Password</label>
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted">Password</label>
           <input
             type="password"
             required
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="input"
+            className="w-full rounded-lg border border-surface-border bg-surface px-4 py-3 text-text-primary outline-none focus:border-accent transition-colors"
             placeholder="••••••••"
           />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        {notice && <p className="text-sm text-accent">{notice}</p>}
+        {error && <p className="text-sm text-red-400 font-medium">{error}</p>}
+        {notice && <p className="text-sm text-accent font-medium">{notice}</p>}
 
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-lg bg-accent px-4 py-2.5 font-medium text-surface disabled:opacity-40"
+          className="w-full rounded-lg bg-accent px-4 py-3.5 font-bold text-surface transition-colors hover:bg-accent-dim disabled:opacity-40"
         >
-          {busy ? "…" : mode === "signin" ? "Log in" : "Sign up"}
+          {busy ? "Processing..." : mode === "signin" ? "Enter Dashboard" : "Create Account"}
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-text-muted">
-        {mode === "signin" ? (
-          <>
-            New here?{" "}
-            <button onClick={() => setMode("signup")} className="text-accent hover:underline">
-              Create an account
-            </button>
-          </>
-        ) : (
-          <>
-            Already have an account?{" "}
-            <button onClick={() => setMode("signin")} className="text-accent hover:underline">
-              Log in
-            </button>
-          </>
-        )}
-      </p>
+      <div className="mt-8 border-t border-surface-border pt-6">
+        <p className="text-sm text-text-secondary">
+          {mode === "signin" ? (
+            <>
+              New to MythoStack?{" "}
+              <button onClick={() => setMode("signup")} className="font-bold text-accent hover:underline">
+                Join the Waitlist
+              </button>
+            </>
+          ) : (
+            <>
+              Already have access?{" "}
+              <button onClick={() => setMode("signin")} className="font-bold text-accent hover:underline">
+                Log in
+              </button>
+            </>
+          )}
+        </p>
+      </div>
 
-      <p className="mt-6 text-xs text-text-muted">
-        <Link href="/" className="hover:text-text-secondary">
-          ← Back to home
+      <p className="mt-6 text-center text-xs text-text-muted">
+        <Link href="/" className="hover:text-text-primary transition-colors">
+          ← Return to Landing Page
         </Link>
       </p>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ChatMessage,
   FinalPayload,
@@ -10,9 +11,9 @@ import {
 } from "@/lib/api";
 
 const PHASE_LABEL: Record<string, string> = {
-  diagnose: "Diagnosing",
-  write: "Writing",
-  refine: "Refining",
+  diagnose: "Analyzing Business",
+  write: "Architecting Campaign",
+  refine: "Compounding Intelligence",
 };
 
 export default function Chat({
@@ -109,11 +110,11 @@ export default function Chat({
         onError: (message: string) => {
           let userMessage = message;
           if (message.includes("503")) {
-            userMessage = "Backend Auth is not configured. Set CHATOY_AUTH_DISABLED=true on the backend for local dev.";
+            userMessage = "The architect is offline. Please check backend configuration.";
           } else if (message.includes("401")) {
-            userMessage = "Unauthorized. Please provide a valid Bearer token in Settings or log in.";
+            userMessage = "Session expired. Please log in again.";
           } else if (message.includes("Failed to fetch")) {
-            userMessage = `Could not connect to backend at ${apiUrl}. Is it running?`;
+            userMessage = `Could not connect to the growth engine at ${apiUrl}.`;
           }
           setError(userMessage);
           setMessages((m) => (m[m.length - 1]?.content === "" ? m.slice(0, -1) : m));
@@ -131,85 +132,90 @@ export default function Chat({
   }
 
   return (
-    <main className="mx-auto flex h-screen max-w-3xl flex-col px-4">
-      <header className="flex items-center justify-between border-b border-surface-border py-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">Chatoy</h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
-            {PHASE_LABEL[phase] ?? phase}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          {userEmail && (
-            <span className="hidden text-text-muted sm:inline" title={userEmail}>
-              {userEmail}
+    <main className="mx-auto flex h-screen max-w-4xl flex-col bg-surface px-6">
+      <header className="flex items-center justify-between border-b border-surface-border py-6">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="font-serif text-2xl font-bold tracking-tight text-text-primary">
+            Mytho<span className="text-accent">Stack</span>
+          </Link>
+          <div className="flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1">
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+              {PHASE_LABEL[phase] ?? phase}
             </span>
-          )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
           <button
             onClick={newChat}
-            className="rounded-md border border-surface-border px-3 py-1.5 text-text-secondary hover:text-text-primary"
+            className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
           >
-            New chat
+            New Session
           </button>
           <button
             onClick={() => setShowSettings((s) => !s)}
-            className="rounded-md border border-surface-border px-3 py-1.5 text-text-secondary hover:text-text-primary"
+            className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
           >
-            Settings
+            Config
           </button>
           {onLogout && (
             <button
               onClick={onLogout}
-              className="rounded-md border border-surface-border px-3 py-1.5 text-text-secondary hover:text-text-primary"
+              className="rounded-lg border border-red-900/30 bg-red-950/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-red-400 transition-colors hover:bg-red-900/20"
             >
-              Log out
+              Exit
             </button>
           )}
         </div>
       </header>
 
       {showSettings && (
-        <section className="space-y-3 border-b border-surface-border bg-surface-elevated/40 p-4 text-sm">
-          <Field label="API URL">
-            <input
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              placeholder="http://127.0.0.1:8000"
-              className="input"
-            />
-          </Field>
-          <Field label="Bearer token (Supabase JWT; blank if auth disabled)">
-            <input
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="eyJ..."
-              className="input"
-            />
-          </Field>
-          <Field label="Business profile (JSON, sent on first message)">
+        <section className="mt-4 space-y-4 rounded-xl border border-surface-border bg-surface-card p-6 shadow-xl">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Growth Engine API">
+              <input
+                value={apiUrl}
+                onChange={(e) => setApiUrl(e.target.value)}
+                placeholder="https://api.mythostack.com"
+                className="w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
+              />
+            </Field>
+            <Field label="Access Token (JWT)">
+              <input
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="eyJ..."
+                className="w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
+              />
+            </Field>
+          </div>
+          <Field label="Strategic Context (JSON)">
             <textarea
               value={profileText}
               onChange={(e) => setProfileText(e.target.value)}
               rows={3}
-              placeholder='{"product": "...", "audience": "..."}'
-              className="input font-mono text-xs"
+              placeholder='{"core_product": "...", "target_audience": "..."}'
+              className="w-full rounded-lg border border-surface-border bg-surface px-3 py-2 font-mono text-xs text-text-primary outline-none focus:border-accent"
             />
           </Field>
-          <button
-            onClick={saveSettings}
-            className="rounded-md bg-accent px-3 py-1.5 font-medium text-surface"
-          >
-            Save
-          </button>
+          <div className="flex justify-end">
+            <button
+              onClick={saveSettings}
+              className="rounded-lg bg-accent px-6 py-2 text-sm font-bold text-surface transition-colors hover:bg-accent-dim"
+            >
+              Apply Configuration
+            </button>
+          </div>
         </section>
       )}
 
-      <div ref={scrollRef} className="scroll-thin flex-1 space-y-4 overflow-y-auto py-6">
+      <div ref={scrollRef} className="scroll-thin flex-1 space-y-6 overflow-y-auto py-8">
         {messages.length === 0 && (
-          <div className="mx-auto max-w-md pt-16 text-center text-text-muted">
-            <p className="text-text-secondary">Welcome to Chatoy.</p>
-            <p className="mt-2 text-sm">
-              If things aren&apos;t working, check **Settings** to ensure the API URL and Token are correct.
+          <div className="mx-auto max-w-lg pt-20 text-center">
+            <h2 className="font-serif text-3xl font-bold text-text-primary">Ready to architect.</h2>
+            <p className="mt-4 text-text-secondary leading-relaxed">
+              Tell the architect about your business or the campaign you want to build. 
+              The more context you provide, the more the intelligence compounds.
             </p>
           </div>
         )}
@@ -218,15 +224,15 @@ export default function Chat({
         ))}
 
         {strategy && (
-          <div className="rounded-lg border border-surface-border bg-surface-elevated p-4 text-sm">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-accent">
-              Locked strategy
+          <div className="mx-auto max-w-2xl rounded-xl border border-accent/20 bg-accent/5 p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2 border-b border-accent/10 pb-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">Active Growth Strategy</span>
             </div>
-            <dl className="space-y-1">
+            <dl className="grid gap-4 sm:grid-cols-2">
               {Object.entries(strategy).map(([k, v]) => (
-                <div key={k} className="flex gap-2">
-                  <dt className="shrink-0 text-text-muted">{k}:</dt>
-                  <dd className="text-text-secondary">{String(v)}</dd>
+                <div key={k} className="flex flex-col">
+                  <dt className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{k.replace(/_/g, ' ')}</dt>
+                  <dd className="mt-1 text-sm font-medium text-text-primary">{String(v)}</dd>
                 </div>
               ))}
             </dl>
@@ -235,33 +241,39 @@ export default function Chat({
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
-          <p className="font-bold">Connection Issue</p>
-          <p>{error}</p>
+        <div className="mb-6 rounded-xl border border-red-900/40 bg-red-950/20 p-4 text-sm text-red-300">
+          <div className="flex items-center gap-2 font-bold uppercase tracking-wider">
+            <span className="text-lg">⚠️</span> System Alert
+          </div>
+          <p className="mt-1 opacity-90">{error}</p>
           <button 
             onClick={() => setShowSettings(true)}
-            className="mt-1 text-xs underline opacity-80 hover:opacity-100"
+            className="mt-2 text-xs font-bold uppercase tracking-widest text-accent underline hover:no-underline"
           >
-            Adjust Settings
+            Reconfigure Engine
           </button>
         </div>
       )}
 
-      <div className="mb-4 flex items-end gap-2 rounded-xl border border-surface-border bg-surface-elevated p-2">
+      <div className="mb-8 flex items-end gap-3 rounded-2xl border border-surface-border bg-surface-card p-3 shadow-lg focus-within:border-accent transition-colors">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           rows={1}
-          placeholder="Message Chatoy…"
-          className="max-h-40 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-text-muted"
+          placeholder="Brief the architect..."
+          className="max-h-48 flex-1 resize-none bg-transparent px-3 py-2 text-base text-text-primary outline-none placeholder:text-text-muted"
         />
         <button
           onClick={() => void send()}
           disabled={busy || !input.trim()}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-surface disabled:opacity-40"
+          className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-surface transition-all hover:bg-accent-dim disabled:opacity-20"
         >
-          {busy ? "…" : "Send"}
+          {busy ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-surface border-t-transparent" />
+          ) : (
+            <span className="text-xl">↑</span>
+          )}
         </button>
       </div>
     </main>
@@ -271,7 +283,7 @@ export default function Chat({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs text-text-muted">{label}</span>
+      <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-muted">{label}</span>
       {children}
     </label>
   );
@@ -292,11 +304,11 @@ function Bubble({
       <div
         className={
           isUser
-            ? "max-w-[80%] whitespace-pre-wrap rounded-2xl bg-accent-soft px-4 py-2.5 text-sm text-text-primary"
-            : "max-w-[85%] whitespace-pre-wrap rounded-2xl bg-surface-elevated px-4 py-2.5 text-sm text-text-secondary"
+            ? "max-w-[80%] whitespace-pre-wrap rounded-2xl bg-surface-card border border-surface-border px-5 py-3.5 text-sm text-text-primary shadow-sm"
+            : "max-w-[90%] whitespace-pre-wrap rounded-2xl bg-surface px-2 py-1 text-base leading-relaxed text-text-secondary"
         }
       >
-        {content || (busy ? <span className="text-text-muted">▋</span> : null)}
+        {content || (busy ? <span className="animate-pulse text-accent">▋</span> : null)}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "ui-sans-serif", "system-ui", "sans-serif";
 }
 
 html,
@@ -12,12 +12,24 @@ body {
 }
 
 body {
-  @apply bg-surface text-text-primary antialiased;
+  @apply bg-surface text-text-secondary antialiased;
+}
+
+h1, h2, h3, .font-serif {
+  @apply font-serif text-text-primary;
 }
 
 @layer components {
   .input {
     @apply w-full rounded-md border border-surface-border bg-surface px-2.5 py-2 text-text-primary outline-none placeholder:text-text-muted focus:border-accent;
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-accent px-5 py-2.5 text-center font-semibold text-surface transition-colors hover:bg-accent-dim;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-surface-border bg-surface-card px-5 py-2.5 text-center font-semibold text-text-primary transition-colors hover:bg-surface-border;
   }
 }
 

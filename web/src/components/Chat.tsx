@@ -61,6 +61,7 @@ export default function Chat({
   function saveSettings() {
     setConfig({ apiUrl, token });
     setShowSettings(false);
+    setError("");
   }
 
   async function send() {
@@ -97,8 +98,6 @@ export default function Chat({
           setPhase(payload.next_step);
           setStrategy(payload.current_strategy);
           setFrameworks(payload.retrieved_frameworks ?? []);
-          // The canonical reply joins multi-agent messages cleanly (e.g. CRO
-          // hand-off preface + written copy), so adopt it as the final text.
           if (payload.reply) {
             setMessages((m) => {
               const copy = [...m];
@@ -108,8 +107,15 @@ export default function Chat({
           }
         },
         onError: (message: string) => {
-          setError(message);
-          // Drop the empty assistant placeholder.
+          let userMessage = message;
+          if (message.includes("503")) {
+            userMessage = "Backend Auth is not configured. Set CHATOY_AUTH_DISABLED=true on the backend for local dev.";
+          } else if (message.includes("401")) {
+            userMessage = "Unauthorized. Please provide a valid Bearer token in Settings or log in.";
+          } else if (message.includes("Failed to fetch")) {
+            userMessage = `Could not connect to backend at ${apiUrl}. Is it running?`;
+          }
+          setError(userMessage);
           setMessages((m) => (m[m.length - 1]?.content === "" ? m.slice(0, -1) : m));
         },
       },
@@ -128,7 +134,7 @@ export default function Chat({
     <main className="mx-auto flex h-screen max-w-3xl flex-col px-4">
       <header className="flex items-center justify-between border-b border-surface-border py-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">MythoStack</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Chatoy</h1>
           <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
             {PHASE_LABEL[phase] ?? phase}
           </span>
@@ -201,9 +207,9 @@ export default function Chat({
       <div ref={scrollRef} className="scroll-thin flex-1 space-y-4 overflow-y-auto py-6">
         {messages.length === 0 && (
           <div className="mx-auto max-w-md pt-16 text-center text-text-muted">
-            <p className="text-text-secondary">Tell the CRO what you&apos;re trying to grow.</p>
+            <p className="text-text-secondary">Welcome to Chatoy.</p>
             <p className="mt-2 text-sm">
-              It interviews you, locks a strategy, then Project Shepherd writes the asset in your voice.
+              If things aren&apos;t working, check **Settings** to ensure the API URL and Token are correct.
             </p>
           </div>
         )}
@@ -224,18 +230,20 @@ export default function Chat({
                 </div>
               ))}
             </dl>
-            {frameworks.length > 0 && (
-              <p className="mt-2 text-xs text-text-muted">
-                {frameworks.length} framework(s) retrieved for this asset.
-              </p>
-            )}
           </div>
         )}
       </div>
 
       {error && (
-        <div className="mb-2 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
-          {error}
+        <div className="mb-4 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
+          <p className="font-bold">Connection Issue</p>
+          <p>{error}</p>
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="mt-1 text-xs underline opacity-80 hover:opacity-100"
+          >
+            Adjust Settings
+          </button>
         </div>
       )}
 
@@ -245,7 +253,7 @@ export default function Chat({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           rows={1}
-          placeholder="Message MythoStack…"
+          placeholder="Message Chatoy…"
           className="max-h-40 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-text-muted"
         />
         <button

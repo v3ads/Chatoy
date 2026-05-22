@@ -11,7 +11,7 @@ export default function Home() {
         <section className="relative overflow-hidden bg-surface pb-24 pt-32 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,#1F1740_0%,#0C0B1A_70%)] opacity-50" />
           <div className="container relative mx-auto max-w-6xl px-6">
-            <h1 className="mx-auto max-w-4xl font-serif text-5xl font-bold leading-[1.15] tracking-tight text-text-primary md:text-7xl">
+            <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-[1.15] tracking-tight text-text-primary md:text-7xl">
               Every campaign<br />builds on the last.
             </h1>
             <p className="mx-auto mt-8 max-w-2xl text-xl leading-relaxed text-text-secondary">
@@ -31,7 +31,7 @@ export default function Home() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mb-16 text-center">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent">How it works</span>
-              <h2 className="mt-4 font-serif text-4xl font-bold text-text-primary md:text-5xl">
+              <h2 className="mt-4 text-4xl font-bold text-text-primary md:text-5xl">
                 A system that gets smarter<br />the more you use it.
               </h2>
             </div>
@@ -55,7 +55,7 @@ export default function Home() {
                 }
               ].map((step, i) => (
                 <div key={i} className="rounded-2xl border border-surface-border bg-surface-card p-8 transition-transform hover:-translate-y-1">
-                  <div className="font-serif text-5xl font-bold text-accent/20">{step.num}</div>
+                  <div className="text-5xl font-bold text-accent/20">{step.num}</div>
                   <h3 className="mt-4 text-xl font-semibold text-text-primary">{step.title}</h3>
                   <p className="mt-4 text-text-secondary leading-relaxed">{step.desc}</p>
                 </div>
@@ -68,7 +68,7 @@ export default function Home() {
         <section className="bg-surface py-24">
           <div className="container mx-auto max-w-6xl px-6 text-center">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent">From input to revenue</span>
-            <h2 className="mt-4 font-serif text-4xl font-bold text-text-primary md:text-5xl">
+            <h2 className="mt-4 text-4xl font-bold text-text-primary md:text-5xl">
               You provide the business.<br />It provides the growth.
             </h2>
             
@@ -96,7 +96,7 @@ export default function Home() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mb-16 text-center">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent">The difference</span>
-              <h2 className="mt-4 font-serif text-4xl font-bold text-text-primary md:text-5xl">
+              <h2 className="mt-4 text-4xl font-bold text-text-primary md:text-5xl">
                 Not another text generator.
               </h2>
             </div>
@@ -131,7 +131,7 @@ export default function Home() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mb-16 text-center">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Pricing</span>
-              <h2 className="mt-4 font-serif text-4xl font-bold text-text-primary md:text-5xl">
+              <h2 className="mt-4 text-4xl font-bold text-text-primary md:text-5xl">
                 One plan. Everything included.
               </h2>
             </div>
@@ -139,19 +139,19 @@ export default function Home() {
             <div className="grid gap-8 md:grid-cols-3">
               <div className="flex flex-col rounded-2xl border border-surface-border bg-surface-card p-8 text-center">
                 <h3 className="text-lg font-semibold">Starter</h3>
-                <div className="my-6 font-serif text-5xl font-bold text-text-primary">$0</div>
+                <div className="my-6 text-5xl font-bold text-text-primary">$0</div>
                 <p className="mb-8 text-sm text-text-secondary">7-day full access. No card required. See what it can build for your business.</p>
                 <Link href="/login" className="rounded-lg border border-surface-border bg-surface-card px-5 py-2.5 text-center font-semibold text-text-primary transition-colors hover:bg-surface-border mt-auto">Start Free Trial</Link>
               </div>
               <div className="flex flex-col rounded-2xl border-2 border-accent bg-gradient-to-b from-[#1F1740] to-surface-card p-8 text-center ring-1 ring-accent/20">
                 <h3 className="text-lg font-semibold">Pro</h3>
-                <div className="my-6 font-serif text-5xl font-bold text-text-primary">$99<span className="text-lg font-normal text-text-muted">/mo</span></div>
+                <div className="my-6 text-5xl font-bold text-text-primary">$99<span className="text-lg font-normal text-text-muted">/mo</span></div>
                 <p className="mb-8 text-sm text-text-secondary">Unlimited campaigns. Voice training. Full campaign builder. Priority support.</p>
                 <Link href="/login" className="rounded-lg bg-accent px-5 py-2.5 text-center font-semibold text-surface transition-colors hover:bg-accent-dim mt-auto">Get Started</Link>
               </div>
               <div className="flex flex-col rounded-2xl border border-surface-border bg-surface-card p-8 text-center opacity-80">
                 <h3 className="text-lg font-semibold">Team</h3>
-                <div className="my-6 font-serif text-5xl font-bold text-text-primary">$199<span className="text-lg font-normal text-text-muted">/mo</span></div>
+                <div className="my-6 text-5xl font-bold text-text-primary">$199<span className="text-lg font-normal text-text-muted">/mo</span></div>
                 <p className="mb-8 text-sm text-text-secondary">Up to 3 seats. Shared library. Team voice profiles. Coming Q2 2027.</p>
                 <button disabled className="rounded-lg border border-surface-border bg-surface-card px-5 py-2.5 text-center font-semibold text-text-muted mt-auto cursor-not-allowed">Join Waitlist</button>
               </div>
@@ -164,7 +164,7 @@ export default function Home() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mb-16 text-center">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent">What early users say</span>
-              <h2 className="mt-4 font-serif text-4xl font-bold text-text-primary md:text-5xl">
+              <h2 className="mt-4 text-4xl font-bold text-text-primary md:text-5xl">
                 Beta access coming soon.
               </h2>
             </div>
@@ -189,7 +189,7 @@ export default function Home() {
         {/* Final CTA */}
         <section className="bg-surface py-32 text-center">
           <div className="container mx-auto max-w-4xl px-6">
-            <h2 className="font-serif text-4xl font-bold text-text-primary md:text-5xl">
+            <h2 className="text-4xl font-bold text-text-primary md:text-5xl">
               Ready to build a marketing engine<br />that compounds?
             </h2>
             <p className="mt-6 text-xl text-text-secondary">

@@ -17,7 +17,6 @@ body {
 
 h1, h2, h3 {
   @apply text-text-primary;
-  font-family: var(--font-serif), Georgia, serif;
 }
 
 @layer components {

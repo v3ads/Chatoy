@@ -6,24 +6,24 @@ const config: Config = {
     extend: {
       colors: {
         surface: {
-          DEFAULT: "#0C0B1A", // --bg
-          elevated: "#13112A", // --bg2
-          card: "#1A1738", // --card
-          border: "#27244A", // --border
+          DEFAULT: "#0C0B1A", // Deep Navy
+          elevated: "#13112A",
+          card: "#1A1738",
+          border: "#27244A",
         },
         text: {
-          primary: "#FBFBFD", // --ink
-          secondary: "#A8A6BC", // --body
-          muted: "#6E6C88", // --muted
+          primary: "#FBFBFD",
+          secondary: "#A8A6BC",
+          muted: "#6E6C88",
         },
         accent: {
-          DEFAULT: "#F5B042", // --amber
-          dim: "#C48A1E", // --amber-dim
+          DEFAULT: "#10B981", // Emerald Green
+          dim: "#059669",
         },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["Georgia", "Times New Roman", "serif"],
+        serif: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"], // Reverting to sans for the clean look
       },
     },
   },

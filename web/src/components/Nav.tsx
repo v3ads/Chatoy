@@ -6,7 +6,7 @@ export default function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-surface/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="font-serif text-2xl font-bold tracking-tight text-text-primary">
+        <Link href="/" className="text-2xl font-bold tracking-tight text-text-primary">
           Mytho<span className="text-accent">Stack</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm font-medium text-text-secondary md:flex">

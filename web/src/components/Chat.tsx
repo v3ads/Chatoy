@@ -158,12 +158,15 @@ export default function Chat({
           >
             New Session
           </button>
-          <button
-            onClick={() => setShowSettings((s) => !s)}
-            className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
-          >
-            Config
-          </button>
+          {/* Config button hidden for production */}
+          {process.env.NODE_ENV === "development" && (
+            <button
+              onClick={() => setShowSettings((s) => !s)}
+              className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
+            >
+              Config
+            </button>
+          )}
           {onLogout && (
             <button
               onClick={onLogout}
@@ -252,12 +255,15 @@ export default function Chat({
             <span className="text-lg">⚠️</span> System Alert
           </div>
           <p className="mt-1 opacity-90">{error}</p>
-          <button 
-            onClick={() => setShowSettings(true)}
-            className="mt-2 text-xs font-bold uppercase tracking-widest text-accent underline hover:no-underline"
-          >
-            Reconfigure Engine
-          </button>
+          {/* Reconfigure hidden for production */}
+          {process.env.NODE_ENV === "development" && (
+            <button 
+              onClick={() => setShowSettings(true)}
+              className="mt-2 text-xs font-bold uppercase tracking-widest text-accent underline hover:no-underline"
+            >
+              Reconfigure Engine
+            </button>
+          )}
         </div>
       )}
 

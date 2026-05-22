@@ -17,8 +17,8 @@ const config: Config = {
           muted: "#6E6C88",
         },
         accent: {
-          DEFAULT: "#10B981", // Emerald Green
-          dim: "#059669",
+          DEFAULT: "#F5B042", // Amber
+          dim: "#C48A1E",
         },
       },
       fontFamily: {

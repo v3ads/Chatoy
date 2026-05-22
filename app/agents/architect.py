@@ -9,10 +9,10 @@ from app.llm.base import LLMClient
 from app.services.memory import AssetLog
 
 
-def make_cro_node(
+def make_architect_node(
     llm: LLMClient, memory: AssetLog | None = None
 ) -> Callable[[AgentState], dict]:
-    """Build the Chief Revenue Officer node.
+    """Build the Growth Architect node.
 
     Interviews the user. If it locks a strategy it strips the handoff marker
     from the visible reply, stores the parsed strategy, and routes to the
@@ -20,7 +20,7 @@ def make_cro_node(
     question.
     """
 
-    def cro_node(state: AgentState) -> dict:
+    def architect_node(state: AgentState) -> dict:
         messages = state.get("messages", [])
         profile = state.get("business_profile", {})
 
@@ -43,4 +43,4 @@ def make_cro_node(
             }
         return {"messages": new_messages, "next_step": "diagnose"}
 
-    return cro_node
+    return architect_node

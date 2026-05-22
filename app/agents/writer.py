@@ -13,18 +13,18 @@ _WRITE_INSTRUCTION = "Write the asset now, following the strategy and voice prof
 def _ensure_user_turn(messages: list[Message]) -> list[Message]:
     """Anthropic requires the final turn to be a user message; append one if
     the conversation currently ends on an assistant turn (e.g. right after the
-    CRO handoff)."""
+    Architect handoff)."""
     if messages and messages[-1].get("role") == "user":
         return messages
     return messages + [{"role": "user", "content": _WRITE_INSTRUCTION}]
 
 
-def make_shepherd_node(
+def make_writer_node(
     llm: LLMClient, rag: FrameworkRetriever | None = None
 ) -> Callable[[AgentState], dict]:
-    """Build the Project Shepherd (copywriter) node."""
+    """Build the Asset Engine (copywriter) node."""
 
-    def shepherd_node(state: AgentState) -> dict:
+    def writer_node(state: AgentState) -> dict:
         strategy = state.get("current_strategy", {})
         voice = state.get("voice_profile", "")
         messages = state.get("messages", [])
@@ -44,4 +44,4 @@ def make_shepherd_node(
             "next_step": "refine",
         }
 
-    return shepherd_node
+    return writer_node

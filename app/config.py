@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """Runtime configuration, sourced from environment / .env (prefix CHATOY_)."""
 
     model_config = SettingsConfigDict(
-        env_prefix="CHATOY_",
+        env_prefix="MYTHOSTACK_",
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
@@ -37,8 +37,8 @@ class Settings(BaseSettings):
 
     # Per-role models. The strategist and the copywriter can run on different
     # models; voice analysis is a cheap structured-extraction job.
-    cro_model: str = "claude-sonnet-4-6"
-    shepherd_model: str = "claude-sonnet-4-6"
+    architect_model: str = "claude-sonnet-4-6"
+    writer_model: str = "claude-sonnet-4-6"
     voice_model: str = "claude-haiku-4-5-20251001"
 
     temperature: float = 0.7
@@ -82,10 +82,10 @@ class Settings(BaseSettings):
 
     def model_for(self, role: str) -> str:
         return {
-            "cro": self.cro_model,
-            "shepherd": self.shepherd_model,
+            "architect": self.architect_model,
+            "writer": self.writer_model,
             "voice": self.voice_model,
-        }.get(role, self.cro_model)
+        }.get(role, self.architect_model)
 
 
 @lru_cache

@@ -12,7 +12,7 @@ import {
 
 const PHASE_LABEL: Record<string, string> = {
   diagnose: "Analyzing Business",
-  write: "Architecting Campaign",
+  write: "Architecting Assets",
   refine: "Compounding Intelligence",
 };
 
@@ -110,7 +110,7 @@ export default function Chat({
         onError: (message: string) => {
           let userMessage = message;
           if (message.includes("503")) {
-            userMessage = "The architect is offline. Please check backend configuration.";
+            userMessage = "The architect is offline. Please check engine configuration.";
           } else if (message.includes("401")) {
             userMessage = "Session expired. Please log in again.";
           } else if (message.includes("Failed to fetch")) {
@@ -135,7 +135,7 @@ export default function Chat({
     <main className="mx-auto flex h-screen max-w-4xl flex-col bg-surface px-6">
       <header className="flex items-center justify-between border-b border-surface-border py-6">
         <div className="flex items-center gap-4">
-          <Link href="/" className="font-serif text-2xl font-bold tracking-tight text-text-primary">
+          <Link href="/" className="text-2xl font-bold tracking-tight text-text-primary">
             Mytho<span className="text-accent">Stack</span>
           </Link>
           <div className="flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1">
@@ -212,9 +212,9 @@ export default function Chat({
       <div ref={scrollRef} className="scroll-thin flex-1 space-y-6 overflow-y-auto py-8">
         {messages.length === 0 && (
           <div className="mx-auto max-w-lg pt-20 text-center">
-            <h2 className="font-serif text-3xl font-bold text-text-primary">Ready to architect.</h2>
+            <h2 className="text-3xl font-bold text-text-primary">Ready to architect.</h2>
             <p className="mt-4 text-text-secondary leading-relaxed">
-              Tell the architect about your business or the campaign you want to build. 
+              Brief the architect on your business or the campaign you want to build. 
               The more context you provide, the more the intelligence compounds.
             </p>
           </div>

@@ -9,7 +9,7 @@ from app.llm.fake import FakeLLM
 logger = logging.getLogger(__name__)
 
 
-def build_llm(settings: Settings, role: str = "cro") -> LLMClient:
+def build_llm(settings: Settings, role: str = "architect") -> LLMClient:
     """Return the right client for a role, falling back to the offline fake.
 
     With no API key (or CHATOY_USE_FAKE_LLM=true) the app still boots and is

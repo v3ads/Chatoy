@@ -1,21 +1,21 @@
-# Chatoy Architecture & Setup Guide
+# MythoStack Architecture & Setup Guide
 
-This document provides a comprehensive overview of the **Chatoy** system, its intelligence layer, and how it supports daily operations.
+This document provides a comprehensive overview of the **MythoStack** system, its intelligence layer, and how it supports compounding growth for businesses.
 
 ## 🧠 System Intelligence
 
-Chatoy is more than just a chat interface; it is a multi-agent orchestration system designed for commercial growth.
+MythoStack is a multi-agent orchestration system designed for commercial growth, embodying the principle: "Every campaign builds on the last."
 
 ### **1. Multi-Agent Orchestration**
-The system uses a two-agent flow to process user requests:
-- **Chief Revenue Officer (CRO)**: Diagnoses the user's needs, interviews them to gather business context, and locks in a marketing strategy.
-- **Project Shepherd**: Takes the locked strategy and uses RAG (Retrieval-Augmented Generation) to write high-quality marketing assets in the user's voice.
+The system uses a two-agent flow to process user requests, forming a "Compounding Loop":
+- **Growth Architect**: Diagnoses the user's needs, interviews them to gather business context, and architects a high-leverage marketing strategy.
+- **Asset Engine**: Takes the architected strategy and uses RAG (Retrieval-Augmented Generation) to write high-quality marketing assets in the user's voice.
 
 ### **2. Retrieval-Augmented Generation (RAG)**
 The backend integrates a framework retriever that pulls in proven marketing frameworks to guide the AI's output, ensuring that the generated assets are not just creative but also strategically sound.
 
 ### **3. Voice Profiling**
-The system can analyze user-provided samples to create a "Voice Profile," allowing Project Shepherd to mimic the user's unique tone and style across all generated content.
+The system can analyze user-provided samples to create a "Voice Profile," allowing the Asset Engine to mimic the user's unique tone and style across all generated content.
 
 ## 🛠 Technical Architecture
 
@@ -34,14 +34,14 @@ The system can analyze user-provided samples to create a "Voice Profile," allowi
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `CHATOY_AUTH_DISABLED` | Bypasses JWT verification for local development. | `false` |
-| `CHATOY_ANTHROPIC_API_KEY` | Required for real AI intelligence. | `None` (uses Fake LLM) |
-| `CHATOY_DATABASE_URL` | SQLAlchemy connection string. | `None` (uses In-Memory) |
-| `CHATOY_CORS_ORIGINS` | Allowed origins for API access. | `http://localhost:3000` |
+| `MYTHOSTACK_AUTH_DISABLED` | Bypasses JWT verification for local development. | `false` |
+| `MYTHOSTACK_ANTHROPIC_API_KEY` | Required for real AI intelligence. | `None` (uses Fake LLM) |
+| `MYTHOSTACK_DATABASE_URL` | SQLAlchemy connection string. | `None` (uses In-Memory) |
+| `MYTHOSTACK_CORS_ORIGINS` | Allowed origins for API access. | `http://localhost:3000` |
 | `NEXT_PUBLIC_API_URL` | Frontend setting for the backend endpoint. | `http://127.0.0.1:8000` |
 
 ## 🚀 Operational Benefits
 
-1.  **Consistency**: Ensures all marketing assets follow a locked strategy.
+1.  **Consistency**: Ensures all marketing assets follow an architected strategy.
 2.  **Scalability**: Allows a single user to manage multiple marketing angles and assets effortlessly.
 3.  **Security**: Strict tenant isolation ensures that one user's data and sessions are never accessible to another.

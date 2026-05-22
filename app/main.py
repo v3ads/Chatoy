@@ -59,8 +59,8 @@ def create_app(
     rag = rag or InMemoryFrameworkRetriever()
     voice_llm = voice_llm or build_llm(settings, role="voice")
     orchestrator = orchestrator or Orchestrator(
-        build_llm(settings, role="cro"),
-        build_llm(settings, role="shepherd"),
+        build_llm(settings, role="architect"),
+        build_llm(settings, role="writer"),
         memory=asset_log,
         rag=rag,
     )

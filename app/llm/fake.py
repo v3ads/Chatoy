@@ -23,9 +23,9 @@ class FakeLLM:
     Used for tests, CI, and local demos without an API key. Behaviour is
     inferred from the system prompt so the same fake can play every role:
 
-    - Project Shepherd -> returns sample copy.
+    - Asset Engine -> returns sample copy.
     - Voice analysis    -> returns a JSON stylistic fingerprint.
-    - CRO (default)     -> asks one question, then hands off once it has
+    - Growth Architect (default)     -> asks one question, then hands off once it has
       collected at least ``handoff_after`` user turns.
 
     Tests can fully override behaviour by passing ``scripted`` (popped in
@@ -56,16 +56,16 @@ class FakeLLM:
             yield token
 
     def _default(self, system: str, messages: list[Message]) -> str:
-        if "Project Shepherd" in system:
+        if "Asset Engine" in system:
             return (
                 "Subject: The 3pm slump killer your team will thank you for\n\n"
                 "Most afternoons fall apart at the exact same moment. Here's how "
                 "to take that hour back — without another meeting.\n\n"
-                "[Fake offline copy. Set CHATOY_ANTHROPIC_API_KEY for real output.]"
+                "[Fake offline copy. Set MYTHOSTACK_ANTHROPIC_API_KEY for real output.]"
             )
         if "stylistic fingerprint" in system:
             return json.dumps(_DEFAULT_PROFILE)
-        # CRO behaviour.
+        # Growth Architect behaviour.
         user_turns = [m for m in messages if m.get("role") == "user"]
         if len(user_turns) >= self._handoff_after:
             return (

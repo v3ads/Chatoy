@@ -3,13 +3,13 @@ import Nav from "@/components/Nav";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-surface">
       <Nav />
       
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-surface pb-24 pt-32 text-center">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,#1F1740_0%,#0C0B1A_70%)] opacity-50" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,#1F1740_0%,#0C0B1A_70%)]" />
           <div className="container relative mx-auto max-w-6xl px-6">
             <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-[1.15] tracking-tight text-text-primary md:text-7xl">
               Every campaign<br />builds on the last.
@@ -74,10 +74,10 @@ export default function Home() {
             
             <div className="mt-16 flex flex-col items-start justify-between gap-12 md:flex-row">
               {[
-                { icon: "📋", title: "Describe your business", desc: "Products, audience, what's working. Simple onboarding — 10 minutes." },
-                { icon: "🧠", title: "It finds the opportunity", desc: "Proprietary model identifies the highest-ROI action." },
-                { icon: "✍️", title: "It writes your voice", desc: "Learns your tone from samples. Output reads like you wrote it." },
-                { icon: "🚀", title: "You deploy and track", desc: "Paste the campaign into your tools. Watch the compound effect." }
+                { icon: "📋", title: "You describe your business", desc: "Products, audience, what's working, what's stuck. Simple onboarding — 10 minutes." },
+                { icon: "🧠", title: "It finds the opportunity", desc: "Proprietary model trained on direct-response marketing identifies the highest-ROI action." },
+                { icon: "✍️", title: "It writes your voice", desc: "Learns your tone from samples. Output reads like you wrote it — not like a robot." },
+                { icon: "🚀", title: "You deploy and track", desc: "Paste the campaign into your tools. Report back results. Watch the compound effect." }
               ].map((step, i) => (
                 <div key={i} className="flex flex-1 flex-col items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full border border-surface-border bg-surface-card text-3xl">
@@ -104,7 +104,7 @@ export default function Home() {
             <div className="grid gap-8 md:grid-cols-2">
               <div className="rounded-2xl border border-surface-border bg-surface-card p-10 opacity-60">
                 <h3 className="text-xl font-semibold text-text-muted">Conventional AI Tools</h3>
-                <ul className="mt-8 space-y-4">
+                <ul className="mt-8 space-y-4 text-left">
                   {["You decide what to write", "Generic tone — obvious AI", "Same quality every output", "No memory of past results"].map((item, i) => (
                     <li key={i} className="flex items-start gap-3 text-text-muted">
                       <span className="font-bold">✕</span> {item}
@@ -114,7 +114,7 @@ export default function Home() {
               </div>
               <div className="rounded-2xl border border-accent/30 bg-gradient-to-b from-[#1F1740] to-surface-card p-10 ring-1 ring-accent/20">
                 <h3 className="text-xl font-semibold text-text-primary">MythoStack</h3>
-                <ul className="mt-8 space-y-4">
+                <ul className="mt-8 space-y-4 text-left">
                   {["It decides the strategy and picks the move", "Learns your voice — reads like you", "Improves with every result you feed back", "Builds on previous wins — compound growth"].map((item, i) => (
                     <li key={i} className="flex items-start gap-3 text-text-primary">
                       <span className="font-bold text-accent">✓</span> {item}
@@ -152,7 +152,7 @@ export default function Home() {
               <div className="flex flex-col rounded-2xl border border-surface-border bg-surface-card p-8 text-center opacity-80">
                 <h3 className="text-lg font-semibold">Team</h3>
                 <div className="my-6 text-5xl font-bold text-text-primary">$199<span className="text-lg font-normal text-text-muted">/mo</span></div>
-                <p className="mb-8 text-sm text-text-secondary">Up to 3 seats. Shared library. Team voice profiles. Coming Q2 2027.</p>
+                <p className="mb-8 text-sm text-text-secondary">Up to 3 seats. Shared campaign library. Team voice profiles. Coming Q2 2027.</p>
                 <button disabled className="rounded-lg border border-surface-border bg-surface-card px-5 py-2.5 text-center font-semibold text-text-muted mt-auto cursor-not-allowed">Join Waitlist</button>
               </div>
             </div>
@@ -171,16 +171,16 @@ export default function Home() {
             
             <div className="grid gap-8 md:grid-cols-2">
               <div className="rounded-2xl border border-surface-border bg-surface-card p-8">
-                <blockquote className="italic text-text-secondary leading-relaxed">
+                <blockquote className="italic text-text-secondary leading-relaxed text-left">
                   "I've tried every AI copy tool. They all required me to know what to ask. The idea that an AI can look at my whole business and tell me 'do this next' — that's the upgrade I've been waiting for."
                 </blockquote>
-                <div className="mt-6 text-sm font-semibold text-accent">— Beta Waitlist Member</div>
+                <div className="mt-6 text-sm font-semibold text-accent text-left">— Beta Waitlist Member</div>
               </div>
               <div className="rounded-2xl border border-surface-border bg-surface-card p-8">
-                <blockquote className="italic text-text-secondary leading-relaxed">
+                <blockquote className="italic text-text-secondary leading-relaxed text-left">
                   "My stack is already full of tools. I don't need another interface. I need something that actually makes decisions and produces finished work. That's the pitch that got me to sign up."
                 </blockquote>
-                <div className="mt-6 text-sm font-semibold text-accent">— Early Access Subscriber</div>
+                <div className="mt-6 text-sm font-semibold text-accent text-left">— Early Access Subscriber</div>
               </div>
             </div>
           </div>

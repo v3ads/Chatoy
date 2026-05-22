@@ -4,7 +4,7 @@ import json
 import logging
 from typing import AsyncIterator
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials
 from sse_starlette.sse import EventSourceResponse
@@ -28,6 +28,7 @@ from app.db.factory import build_stores, CreditStore
 from app.orchestrator import Orchestrator
 from app.services.memory import AssetLog, MarketingAsset
 from app.services.rag import FrameworkRetriever, InMemoryFrameworkRetriever
+from app.services.stripe import StripeService
 from app.services.voice_profile import (
     VoiceProfileStore,
     analyze_voice,
@@ -48,6 +49,7 @@ def create_app(
     session_store: SessionStore | None = None,
     credit_store: CreditStore | None = None,
     rag: FrameworkRetriever | None = None,
+    stripe_service: StripeService | None = None,
     auth: JWTAuth | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
@@ -61,6 +63,7 @@ def create_app(
         credit_store = credit_store or default_credits
 
     rag = rag or InMemoryFrameworkRetriever()
+    stripe_service = stripe_service or StripeService(settings, credit_store)
     voice_llm = voice_llm or build_llm(settings, role="voice")
     orchestrator = orchestrator or Orchestrator(
         build_llm(settings, role="architect"),
@@ -86,6 +89,7 @@ def create_app(
     app.state.asset_log = asset_log
     app.state.session_store = session_store
     app.state.credit_store = credit_store
+    app.state.stripe_service = stripe_service
     app.state.auth = auth
 
     def current_user(
@@ -230,6 +234,12 @@ def create_app(
     ) -> dict:
         credit_store.set_auto_recharge(user.user_id, req.enabled)
         return {"status": "ok", "auto_recharge_enabled": req.enabled}
+
+    @app.post("/webhooks/stripe")
+    async def stripe_webhook(request: Request):
+        payload = await request.body()
+        sig_header = request.headers.get("stripe-signature")
+        return stripe_service.handle_webhook(payload.decode("utf-8"), sig_header)
 
     return app
 

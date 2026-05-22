@@ -47,7 +47,7 @@ export default function AuthForm() {
     setError("");
     setNotice("");
     if (!supabase) {
-      setError("Login isn't configured yet. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      setError("Login isn't configured yet.");
       return;
     }
     setBusy(true);
@@ -56,7 +56,6 @@ export default function AuthForm() {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         
-        // Notify backend to send Brevo verification email
         if (data.user) {
           const { apiUrl } = getConfig();
           const token = data.session?.access_token;
@@ -102,12 +101,6 @@ export default function AuthForm() {
         {mode === "signin" ? "Enter your credentials to access the architect." : mode === "signup" ? "Sign up to join MythoStack." : "Enter your email to receive a password reset link."}
       </p>
 
-      {!isSupabaseConfigured && (
-        <p className="mt-4 rounded-md border border-accent/20 bg-accent/5 px-3 py-2 text-xs text-accent">
-          Waitlist mode active. Use the dev token in chat settings if you have access.
-        </p>
-      )}
-
       <form onSubmit={mode === "reset" ? handleReset : submit} className="mt-8 space-y-4">
         {mode === "reset" ? (
           <div>
@@ -135,7 +128,18 @@ export default function AuthForm() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-text-muted">Password</label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-text-muted">Password</label>
+                {mode === "signin" && (
+                  <button 
+                    type="button"
+                    onClick={() => setMode("reset")} 
+                    className="text-xs font-bold text-accent hover:underline"
+                  >
+                    Forgot?
+                  </button>
+                )}
+              </div>
               <input
                 type="password"
                 required
@@ -161,20 +165,13 @@ export default function AuthForm() {
         </button>
       </form>
 
-      <div className="mt-8 border-t border-surface-border pt-6 space-y-3">
-        <p className="text-sm text-text-secondary">
+      <div className="mt-8 border-t border-surface-border pt-6">
+        <p className="text-sm text-text-secondary text-center">
           {mode === "signin" ? (
             <>
               New to MythoStack?{" "}
               <button onClick={() => setMode("signup")} className="font-bold text-accent hover:underline">
                 Join the Waitlist
-              </button>
-            </>
-          ) : mode === "signup" ? (
-            <>
-              Already have access?{" "}
-              <button onClick={() => setMode("signin")} className="font-bold text-accent hover:underline">
-                Log in
               </button>
             </>
           ) : (
@@ -186,13 +183,6 @@ export default function AuthForm() {
             </>
           )}
         </p>
-        {mode === "signin" && (
-          <p className="text-sm text-text-secondary">
-            <button onClick={() => setMode("reset")} className="font-bold text-accent hover:underline">
-              Forgot password?
-            </button>
-          </p>
-        )}
       </div>
 
       <p className="mt-6 text-center text-xs text-text-muted">

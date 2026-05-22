@@ -21,9 +21,9 @@ def _database_url() -> str:
     url = get_settings().database_url
     if not url:
         raise RuntimeError(
-            "CHATOY_DATABASE_URL is not set; cannot run migrations. "
+            "MYTHOSTACK_DATABASE_URL is not set; cannot run migrations. "
             "Set it to a SQLAlchemy URL, e.g. "
-            "postgresql+psycopg://user:pass@host:5432/chatoy"
+            "postgresql+psycopg://user:pass@host:5432/mythostack"
         )
     return url
 

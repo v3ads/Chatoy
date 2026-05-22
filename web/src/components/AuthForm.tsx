@@ -8,7 +8,8 @@ import { getConfig } from "@/lib/api";
 
 type Mode = "signin" | "signup" | "reset";
 
-export default function AuthForm() {
+export default function MythoAuthForm() {
+  // Version 2.0.1 - Force Refresh for Forgot Password Link
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");

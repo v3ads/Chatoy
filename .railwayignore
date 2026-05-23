@@ -1,19 +1,4 @@
-# Exclude all files by default
-*
-
-# Allow essential project files
-!Dockerfile
-!requirements.txt
-!app/
-!alembic/
-!alembic.ini
-!pyproject.toml
-!scripts/
-
-# Allow .railwayignore itself
-!.railwayignore
-
-# Explicitly exclude common large directories and files
+# Ignore common development and build artifacts
 .git/
 .venv/
 venv/
@@ -28,7 +13,13 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# Ignore environment files
 .env
 .env.local
+
+# Explicitly ignore the web frontend directory
 web/
+
+# Ignore test files and directories
 tests/

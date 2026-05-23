@@ -23,3 +23,9 @@ web/
 
 # Ignore test files and directories
 tests/
+
+# Exclude large directories from the home directory
+.local/
+.nvm/
+.npm/
+.cache/

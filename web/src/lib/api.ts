@@ -11,7 +11,7 @@ const API_URL_KEY = "mythostack.apiUrl";
 const TOKEN_KEY = "mythostack.token";
 
 const DEFAULT_API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "https://chatoy-production.up.railway.app:8080";
+  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export interface AppConfig {
   apiUrl: string;
@@ -22,8 +22,12 @@ export function getConfig(): AppConfig {
   if (typeof window === "undefined") {
     return { apiUrl: DEFAULT_API_URL, token: "" };
   }
+  // The deployed API URL (NEXT_PUBLIC_API_URL) always wins, so a stale
+  // localStorage value can never point the app at the wrong backend in prod.
+  const apiUrl =
+    process.env.NEXT_PUBLIC_API_URL || localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
   return {
-    apiUrl: localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL,
+    apiUrl,
     token: localStorage.getItem(TOKEN_KEY) || "",
   };
 }

@@ -4,7 +4,6 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
-COPY scripts ./scripts
 WORKDIR /srv
 
 COPY requirements.txt ./
@@ -15,6 +14,6 @@ COPY alembic ./alembic
 COPY alembic.ini pyproject.toml ./
 COPY scripts ./scripts
 
-# Railway/most PaaS inject $PORT; default to 8000 locally.
-EXPOSE 8000
+# Railway/most PaaS inject $PORT; default to 8080 locally.
+EXPOSE 8080
 CMD ["bash", "scripts/start.sh"]

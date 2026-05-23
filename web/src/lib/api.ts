@@ -11,7 +11,7 @@ const API_URL_KEY = "mythostack.apiUrl";
 const TOKEN_KEY = "mythostack.token";
 
 const DEFAULT_API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_URL ?? "https://chatoy-production.up.railway.app:8080";
 
 export interface AppConfig {
   apiUrl: string;

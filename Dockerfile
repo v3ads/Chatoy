@@ -5,6 +5,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /srv
+ENV PYTHONPATH=/srv
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt

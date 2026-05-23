@@ -1,9 +1,25 @@
-*
-!.railwayignore
-!Dockerfile
-!requirements.txt
-!app/
-!alembic/
-!alembic.ini
-!pyproject.toml
-!scripts/
+# Ignore common development and build artifacts
+.git/
+.venv/
+venv/
+env/
+node_modules/
+dist/
+build/
+*.log
+*.sqlite
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Ignore environment files
+.env
+.env.local
+
+# Ignore frontend directory if it's deployed separately
+web/
+
+# Ignore test files and directories
+tests/

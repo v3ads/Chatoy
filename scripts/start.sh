@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-
-echo "--- Debugging start.sh ---"
-ls -la /srv
-ls -la /srv/scripts
-echo "--- End Debugging start.sh ---"
-
 # Production entrypoint: apply migrations (when a database is configured) then
 # serve the API on the platform-provided $PORT.
 set -euo pipefail

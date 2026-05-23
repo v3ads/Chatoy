@@ -43,7 +43,7 @@ class StripeService:
                 self.credit_store.add(user_id, 50.0)
             elif price_id == self.settings.stripe_pro_price_id:
                 # Pro plan might come with a starting balance or just unlock unlimited
-                # For now, let's give them a 100 credit boost
+                # For now, let\'s give them a 100 credit boost
                 self.credit_store.add(user_id, 100.0)
 
     def trigger_auto_recharge(self, user_id: str, customer_id: str):

@@ -13,6 +13,8 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini pyproject.toml ./
 COPY scripts ./scripts
+RUN ls -la /srv
+RUN ls -la /srv/scripts
 
 # Railway/most PaaS inject $PORT; default to 8000 locally.
 EXPOSE 8000

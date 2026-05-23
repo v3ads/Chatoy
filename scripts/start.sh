@@ -6,11 +6,8 @@ set -euo pipefail
 if [ -n "${MYTHOSTACK_DATABASE_URL:-}" ]; then
   echo "==> Applying database migrations"
   alembic upgrade head
-elif [ -n "${CHATOY_DATABASE_URL:-}" ]; then
-  echo "==> Applying database migrations (legacy env)"
-  alembic upgrade head
 else
-  echo "==> Database URL not set; skipping migrations (in-memory stores)"
+  echo "==> MYTHOSTACK_DATABASE_URL not set; skipping migrations (in-memory stores)"
 fi
 
 echo "==> Starting API on port ${PORT:-8080}"

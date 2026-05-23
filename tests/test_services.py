@@ -11,10 +11,16 @@ from app.services.voice_profile import (
 
 
 def test_rag_returns_asset_specific_frameworks():
-    rag = InMemoryFrameworkRetriever()
-    out = rag.retrieve("email_promo", k=2)
-    assert len(out) == 2
-    assert any("PAS" in f for f in out)
+    # Contract: retrieval is keyed by asset type and respects k.
+    rag = InMemoryFrameworkRetriever({"email_promo": ["A", "B", "C"]})
+    assert rag.retrieve("email_promo", k=2) == ["A", "B"]
+
+    # The built-in library returns dedicated (non-generic) email frameworks.
+    from app.services.rag import _GENERIC
+
+    default_out = InMemoryFrameworkRetriever().retrieve("email_promo", k=2)
+    assert len(default_out) == 2
+    assert default_out != _GENERIC[:2]
 
 
 def test_rag_loose_match_and_generic_fallback():

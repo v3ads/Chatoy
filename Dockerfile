@@ -7,9 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /srv
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir stripe
+RUN pip install --no-cache-dir --verbose -r requirements.txt
 
 COPY app ./app
 COPY alembic ./alembic

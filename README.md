@@ -46,7 +46,3 @@ If you encounter issues, check these common pitfalls:
 - **Backend**: Deploy to Railway using the included `railway.toml` and `Dockerfile`.
 - **Frontend**: Deploy to Vercel. Ensure `NEXT_PUBLIC_API_URL` is set to your backend URL.
 - **Database**: Optional. If `MYTHOSTACK_DATABASE_URL` is missing, the app uses in-memory stores (data lost on restart).
-
-<!-- Triggering a new deployment -->
-
-<!-- Another deployment trigger -->

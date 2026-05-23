@@ -23,3 +23,36 @@ web/
 
 # Ignore test files and directories
 tests/
+
+# Aggressive exclusions for potential large files
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.iso
+*.img
+*.dmg
+*.vmdk
+*.vdi
+*.ova
+*.qcow2
+*.bin
+*.dat
+*.db
+*.sqlite3
+*.bak
+*.tmp
+*.temp
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# Exclude any potential large data directories
+data/
+logs/
+cache/
+output/
+files/
+uploads/

@@ -1,11 +1,25 @@
-# Backend deploys (railway up) should upload only the API, not the frontend
-# or local dev artifacts.
-.git
-.venv
-__pycache__
+# Ignore common development and build artifacts
+.git/
+.venv/
+venv/
+env/
+node_modules/
+dist/
+build/
+*.log
+*.sqlite
+__pycache__/
 *.pyc
-.pytest_cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Ignore environment files
 .env
-.env.*
-web
-tests
+.env.local
+
+# Ignore frontend directory if it's deployed separately
+web/
+
+# Ignore test files and directories
+tests/

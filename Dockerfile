@@ -17,3 +17,4 @@ COPY scripts ./scripts
 # Railway/most PaaS inject $PORT; default to 8000 locally.
 EXPOSE 8000
 CMD ["bash", "scripts/start.sh"]
+# Force rebuild

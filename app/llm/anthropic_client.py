@@ -38,14 +38,21 @@ class AnthropicLLM:
     ) -> None:
         from langchain_anthropic import ChatAnthropic
 
-        self._chat = ChatAnthropic(
-            model=model,
-            anthropic_api_key=api_key,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            default_request_timeout=timeout,
-            max_retries=max_retries,
-        )
+        # Claude 4 models deprecate the temperature parameter
+        is_claude_4 = any(m in model for m in ["claude-opus-4", "claude-sonnet-4", "claude-haiku-4"])
+        
+        kwargs = {
+            "model": model,
+            "anthropic_api_key": api_key,
+            "max_tokens": max_tokens,
+            "default_request_timeout": timeout,
+            "max_retries": max_retries,
+        }
+        
+        if not is_claude_4:
+            kwargs["temperature"] = temperature
+            
+        self._chat = ChatAnthropic(**kwargs)
 
     def _to_lc(self, system: str, messages: list[Message]):
         from langchain_core.messages import (

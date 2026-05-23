@@ -16,4 +16,6 @@ COPY scripts ./scripts
 
 # Railway/most PaaS inject $PORT; default to 8000 locally.
 EXPOSE 8000
+RUN ls -la /srv
+RUN ls -la /srv/scripts
 CMD ["bash", "/srv/scripts/start.sh"]

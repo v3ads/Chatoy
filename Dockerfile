@@ -4,6 +4,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
+COPY scripts ./scripts
 WORKDIR /srv
 
 COPY requirements.txt ./
@@ -16,6 +17,4 @@ COPY scripts ./scripts
 
 # Railway/most PaaS inject $PORT; default to 8000 locally.
 EXPOSE 8000
-RUN ls -la /srv
-RUN ls -la /srv/scripts
-CMD ["bash", "/srv/scripts/start.sh"]
+CMD ["bash", "scripts/start.sh"]

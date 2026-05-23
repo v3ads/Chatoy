@@ -44,7 +44,7 @@ export default function Chat({
     // In production, always use the env-provided API URL and clear any stale localStorage
     const isProduction = process.env.NODE_ENV === 'production';
     if (isProduction) {
-      const productionUrl = process.env.NEXT_PUBLIC_API_URL || 'https://mythostack-production.up.railway.app';
+      const productionUrl = process.env.NEXT_PUBLIC_API_URL || 'https://chatoy-production.up.railway.app:8080';
       setApiUrl(productionUrl);
       setConfig({ apiUrl: productionUrl });
       setToken('');

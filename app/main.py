@@ -4,6 +4,7 @@ import json
 import logging
 from typing import AsyncIterator
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials
@@ -12,19 +13,24 @@ from sse_starlette.sse import EventSourceResponse
 from app.agents.state import AgentState
 from app.auth import JWTAuth, Principal, bearer_scheme, build_auth
 from app.config import Settings, get_settings
-from app.llm.factory import build_llm
 from app.models import (
     AssetCreateRequest,
     AssetListResponse,
     AssetResponse,
+    AvailableModel,
     ChatRequest,
     ChatResponse,
+    ModelConfigResponse,
+    ModelConfigUpdate,
     VoiceAnalyzeRequest,
     VoiceProfileResponse,
     CreditResponse,
     AutoRechargeRequest,
 )
 from app.db.factory import build_stores, CreditStore
+from app.db.model_config_store import build_model_config_store
+from app.llm.resolver import ModelResolver, ResolvingLLM
+from app.services.model_config import ModelConfigStore
 from app.orchestrator import Orchestrator
 from app.services.memory import AssetLog, MarketingAsset
 from app.services.rag import FrameworkRetriever, InMemoryFrameworkRetriever
@@ -49,6 +55,7 @@ def create_app(
     asset_log: AssetLog | None = None,
     session_store: SessionStore | None = None,
     credit_store: CreditStore | None = None,
+    model_config_store: ModelConfigStore | None = None,
     rag: FrameworkRetriever | None = None,
     stripe_service: StripeService | None = None,
     email_service: EmailService | None = None,
@@ -64,13 +71,16 @@ def create_app(
         session_store = session_store or default_sessions
         credit_store = credit_store or default_credits
 
+    model_config_store = model_config_store or build_model_config_store(settings)
+    resolver = ModelResolver(settings, model_config_store)
+
     rag = rag or InMemoryFrameworkRetriever()
     stripe_service = stripe_service or StripeService(settings, credit_store)
     email_service = email_service or EmailService(settings)
-    voice_llm = voice_llm or build_llm(settings, role="voice")
+    voice_llm = voice_llm or ResolvingLLM("voice", resolver)
     orchestrator = orchestrator or Orchestrator(
-        build_llm(settings, role="architect"),
-        build_llm(settings, role="writer"),
+        ResolvingLLM("architect", resolver),
+        ResolvingLLM("writer", resolver),
         memory=asset_log,
         rag=rag,
         credits=credit_store,
@@ -95,11 +105,18 @@ def create_app(
     app.state.stripe_service = stripe_service
     app.state.email_service = email_service
     app.state.auth = auth
+    app.state.model_config_store = model_config_store
+    app.state.model_resolver = resolver
 
     def current_user(
         creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     ) -> Principal:
         return auth.authenticate(creds)
+
+    def require_admin(user: Principal = Depends(current_user)) -> Principal:
+        if (user.email or "").lower() != settings.admin_email.lower():
+            raise HTTPException(status_code=403, detail="Admin access required")
+        return user
 
     def _session_key(user_id: str, session_id: str) -> str:
         # Namespacing by tenant makes sessions inherently per-user, so one
@@ -253,6 +270,54 @@ def create_app(
         payload = await request.body()
         sig_header = request.headers.get("stripe-signature")
         return stripe_service.handle_webhook(payload.decode("utf-8"), sig_header)
+
+    # --- Admin: per-role model selection (OpenRouter) ---
+
+    def _current_model_config() -> ModelConfigResponse:
+        ov = model_config_store.get_overrides()
+        return ModelConfigResponse(
+            architect=ov.get("architect"),
+            writer=ov.get("writer"),
+            voice=ov.get("voice"),
+        )
+
+    @app.get("/admin/models", response_model=ModelConfigResponse)
+    def get_model_config(user: Principal = Depends(require_admin)) -> ModelConfigResponse:
+        return _current_model_config()
+
+    @app.put("/admin/models", response_model=ModelConfigResponse)
+    def set_model_config(
+        req: ModelConfigUpdate, user: Principal = Depends(require_admin)
+    ) -> ModelConfigResponse:
+        model_config_store.set_overrides(
+            {"architect": req.architect, "writer": req.writer, "voice": req.voice}
+        )
+        return _current_model_config()
+
+    @app.get("/admin/models/available", response_model=list[AvailableModel])
+    def available_models(user: Principal = Depends(require_admin)) -> list[AvailableModel]:
+        headers = {}
+        if settings.openrouter_api_key:
+            headers["Authorization"] = f"Bearer {settings.openrouter_api_key}"
+        try:
+            resp = httpx.get(
+                f"{settings.openrouter_base_url.rstrip('/')}/models",
+                headers=headers,
+                timeout=15.0,
+            )
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(
+                status_code=502, detail=f"Could not fetch OpenRouter models: {exc}"
+            )
+        models = [
+            AvailableModel(id=m["id"], name=m.get("name") or m["id"])
+            for m in data
+            if m.get("id")
+        ]
+        models.sort(key=lambda m: m.name.lower())
+        return models
 
     return app
 

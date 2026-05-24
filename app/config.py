@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     temperature: float = 0.7
     max_tokens: int = 2048
 
+    # OpenRouter (admin model selector). When set, the admin can route agent
+    # roles through OpenRouter models; each falls back to the Anthropic default
+    # above if the chosen model errors or times out.
+    openrouter_api_key: str | None = None
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+
     # Force the deterministic offline LLM even when a key is present.
     use_fake_llm: bool = False
 

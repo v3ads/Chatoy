@@ -51,3 +51,13 @@ class CreditProfileRow(Base):
     credits_balance: Mapped[float] = mapped_column(Float, default=10.0)  # Initial free credits
     auto_recharge_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     updated_at: Mapped[str] = mapped_column(String(40), default=_now_iso, onupdate=_now_iso)
+
+
+class AppSettingRow(Base):
+    """Global key/value settings (e.g. the admin's per-role model overrides)."""
+
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[str] = mapped_column(String(40), default=_now_iso, onupdate=_now_iso)

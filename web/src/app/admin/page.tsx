@@ -1,0 +1,142 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  AvailableModel,
+  ModelConfig,
+  getAvailableModels,
+  getModelConfig,
+  setModelConfig,
+} from "@/lib/api";
+
+type Role = "architect" | "writer" | "voice";
+const ROLES: { key: Role; label: string; hint: string }[] = [
+  { key: "architect", label: "Architect", hint: "Strategy / interview agent" },
+  { key: "writer", label: "Writer", hint: "Writes the marketing copy" },
+  { key: "voice", label: "Voice", hint: "Analyzes writing samples" },
+];
+
+export default function AdminPage() {
+  const [models, setModels] = useState<AvailableModel[]>([]);
+  const [config, setConfig] = useState<ModelConfig>({
+    architect: null,
+    writer: null,
+    voice: null,
+  });
+  const [loading, setLoading] = useState(true);
+  const [denied, setDenied] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [cfg, list] = await Promise.all([getModelConfig(), getAvailableModels()]);
+        setConfig(cfg);
+        setModels(list);
+      } catch (e) {
+        const status = (e as { status?: number }).status;
+        if (status === 401 || status === 403) {
+          setDenied(true);
+        } else {
+          setError((e as Error).message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await setModelConfig(config);
+      setConfig(updated);
+      setSavedAt(Date.now());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="p-8 text-text-muted">Loading…</div>;
+  }
+
+  if (denied) {
+    return (
+      <main className="mx-auto max-w-md px-6 py-24 text-center">
+        <h1 className="text-2xl font-semibold">Admin only</h1>
+        <p className="mt-3 text-text-secondary">
+          You need to be signed in as an administrator to view this page.
+        </p>
+        <Link href="/" className="mt-6 inline-block text-accent hover:underline">
+          ← Back to home
+        </Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl px-6 py-12">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Model settings</h1>
+        <Link href="/chat" className="text-sm text-text-secondary hover:text-text-primary">
+          ← Back to app
+        </Link>
+      </div>
+      <p className="mt-2 text-sm text-text-muted">
+        Choose the OpenRouter model for each agent. Leave on “Default (Claude)” to use the
+        built-in model. If a chosen model fails, it automatically falls back to Claude.
+        Changes apply to all users immediately.
+      </p>
+
+      <div className="mt-8 space-y-5">
+        {ROLES.map(({ key, label, hint }) => (
+          <label key={key} className="block">
+            <span className="text-sm font-medium text-text-primary">{label}</span>
+            <span className="ml-2 text-xs text-text-muted">{hint}</span>
+            <select
+              value={config[key] ?? ""}
+              onChange={(e) =>
+                setConfig((c) => ({ ...c, [key]: e.target.value || null }))
+              }
+              className="mt-1.5 w-full rounded-md border border-surface-border bg-surface px-3 py-2 text-text-primary outline-none focus:border-accent"
+            >
+              <option value="">— Default (Claude) —</option>
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+
+      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+      <div className="mt-8 flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="rounded-lg bg-accent px-5 py-2.5 font-medium text-surface disabled:opacity-40"
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+        {savedAt && !saving && (
+          <span className="text-sm text-accent">Saved.</span>
+        )}
+        {models.length === 0 && (
+          <span className="text-sm text-text-muted">
+            (No OpenRouter models loaded — is the API key set?)
+          </span>
+        )}
+      </div>
+    </main>
+  );
+}

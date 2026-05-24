@@ -190,3 +190,52 @@ export async function analyzeVoice(samples: string[]): Promise<VoiceProfileRespo
   }
   return res.json();
 }
+
+// --- Admin: per-role model selection (OpenRouter) ---
+
+export interface AvailableModel {
+  id: string;
+  name: string;
+}
+
+export interface ModelConfig {
+  architect: string | null;
+  writer: string | null;
+  voice: string | null;
+}
+
+async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const { apiUrl } = getConfig();
+  const token = await getAccessToken();
+  const res = await fetch(`${apiUrl}${path}`, {
+    ...init,
+    headers: { ...authHeaders(token), ...(init?.headers ?? {}) },
+  });
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      detail = (await res.json()).detail ?? detail;
+    } catch {
+      /* ignore */
+    }
+    const err = new Error(detail) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
+  return res.json() as Promise<T>;
+}
+
+export function getAvailableModels(): Promise<AvailableModel[]> {
+  return adminFetch<AvailableModel[]>("/admin/models/available");
+}
+
+export function getModelConfig(): Promise<ModelConfig> {
+  return adminFetch<ModelConfig>("/admin/models");
+}
+
+export function setModelConfig(cfg: ModelConfig): Promise<ModelConfig> {
+  return adminFetch<ModelConfig>("/admin/models", {
+    method: "PUT",
+    body: JSON.stringify(cfg),
+  });
+}

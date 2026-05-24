@@ -62,3 +62,21 @@ class CreditResponse(BaseModel):
 
 class AutoRechargeRequest(BaseModel):
     enabled: bool
+
+
+class AvailableModel(BaseModel):
+    id: str
+    name: str
+
+
+class ModelConfigResponse(BaseModel):
+    # Per-role OpenRouter model overrides (empty/None = use the Claude default).
+    architect: str | None = None
+    writer: str | None = None
+    voice: str | None = None
+
+
+class ModelConfigUpdate(BaseModel):
+    architect: str | None = None
+    writer: str | None = None
+    voice: str | None = None

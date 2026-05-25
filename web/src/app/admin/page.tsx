@@ -39,15 +39,11 @@ export default function AdminPage() {
   const [kbNotice, setKbNotice] = useState("");
 
   useEffect(() => {
+    // Essential settings + knowledge status gate the page — load them first.
     (async () => {
       try {
-        const [cfg, list, kb] = await Promise.all([
-          getModelConfig(),
-          getAvailableModels(),
-          getKnowledgeStatus(),
-        ]);
+        const [cfg, kb] = await Promise.all([getModelConfig(), getKnowledgeStatus()]);
         setConfig(cfg);
-        setModels(list);
         setKnowledge(kb);
       } catch (e) {
         const status = (e as { status?: number }).status;
@@ -60,6 +56,11 @@ export default function AdminPage() {
         setLoading(false);
       }
     })();
+    // The OpenRouter model list can be slow or unavailable; load it separately so
+    // it never blocks the page. On failure the dropdowns just show the default.
+    getAvailableModels()
+      .then(setModels)
+      .catch(() => setModels([]));
   }, []);
 
   async function save() {

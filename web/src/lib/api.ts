@@ -233,11 +233,16 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function getAvailableModels(): Promise<AvailableModel[]> {
+export interface AvailableModelsResult {
+  models: AvailableModel[];
+  reason: string | null;
+}
+
+export function getAvailableModels(): Promise<AvailableModelsResult> {
   // The backend proxies OpenRouter, which can stall — cap the wait client-side.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
-  return adminFetch<AvailableModel[]>("/admin/models/available", {
+  return adminFetch<AvailableModelsResult>("/admin/models/available", {
     signal: controller.signal,
   }).finally(() => clearTimeout(timer));
 }

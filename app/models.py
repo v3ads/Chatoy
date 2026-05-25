@@ -100,6 +100,12 @@ class AvailableModel(BaseModel):
     name: str
 
 
+class AvailableModelsResponse(BaseModel):
+    models: list[AvailableModel] = Field(default_factory=list)
+    # Human-readable explanation when the list is empty (shown in the admin UI).
+    reason: str | None = None
+
+
 class ModelConfigResponse(BaseModel):
     # Per-role OpenRouter model overrides (empty/None = use the Claude default).
     architect: str | None = None

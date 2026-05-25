@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [knowledge, setKnowledge] = useState<KnowledgeStatus | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [kbNotice, setKbNotice] = useState("");
+  const [modelsReason, setModelsReason] = useState("");
 
   useEffect(() => {
     // Essential settings + knowledge status gate the page — load them first.
@@ -57,10 +58,15 @@ export default function AdminPage() {
       }
     })();
     // The OpenRouter model list can be slow or unavailable; load it separately so
-    // it never blocks the page. On failure the dropdowns just show the default.
+    // it never blocks the page. The reason (if empty) is shown next to Save.
     getAvailableModels()
-      .then(setModels)
-      .catch(() => setModels([]));
+      .then((res) => {
+        setModels(res.models);
+        setModelsReason(res.reason ?? "");
+      })
+      .catch(() =>
+        setModelsReason("Couldn't load the model list (the request failed or timed out)."),
+      );
   }, []);
 
   async function save() {
@@ -167,7 +173,7 @@ export default function AdminPage() {
         )}
         {models.length === 0 && (
           <span className="text-sm text-text-muted">
-            (No OpenRouter models loaded — is the API key set?)
+            {modelsReason || "No OpenRouter models loaded."}
           </span>
         )}
       </div>

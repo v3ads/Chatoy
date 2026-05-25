@@ -20,6 +20,7 @@ from app.models import (
     AssetMetricsUpdate,
     AssetResponse,
     AvailableModel,
+    AvailableModelsResponse,
     ChatRequest,
     ChatResponse,
     ModelConfigResponse,
@@ -466,12 +467,17 @@ def create_app(
         )
         return _current_model_config()
 
-    @app.get("/admin/models/available", response_model=list[AvailableModel])
-    def available_models(user: Principal = Depends(require_admin)) -> list[AvailableModel]:
+    @app.get("/admin/models/available", response_model=AvailableModelsResponse)
+    def available_models(
+        user: Principal = Depends(require_admin),
+    ) -> AvailableModelsResponse:
         # Best-effort: an empty list just means the dropdowns offer "Default
-        # (Claude)". Never error the admin page over the model catalogue.
+        # (Claude)". We never error the page — instead we report WHY it's empty so
+        # the admin UI can show it directly.
         if not settings.openrouter_api_key:
-            return []
+            return AvailableModelsResponse(
+                reason="No OpenRouter API key is set on the server (MYTHOSTACK_OPENROUTER_API_KEY)."
+            )
         try:
             resp = httpx.get(
                 f"{settings.openrouter_base_url.rstrip('/')}/models",
@@ -480,16 +486,28 @@ def create_app(
             )
             resp.raise_for_status()
             data = resp.json().get("data", [])
-        except Exception as exc:  # noqa: BLE001 — degrade to the default dropdown
+        except httpx.HTTPStatusError as exc:
+            code = exc.response.status_code
+            if code == 401:
+                reason = "OpenRouter rejected the API key (401 Unauthorized) — it may be invalid or rotated."
+            elif code == 429:
+                reason = "OpenRouter rate-limited the request (429) — try again shortly."
+            else:
+                reason = f"OpenRouter returned HTTP {code}."
             logging.warning("OpenRouter model list unavailable: %s", exc)
-            return []
+            return AvailableModelsResponse(reason=reason)
+        except Exception as exc:  # noqa: BLE001 — timeout / connection / parse
+            logging.warning("OpenRouter model list unavailable: %s", exc)
+            return AvailableModelsResponse(
+                reason=f"Couldn't reach OpenRouter ({type(exc).__name__})."
+            )
         models = [
             AvailableModel(id=m["id"], name=m.get("name") or m["id"])
             for m in data
             if m.get("id")
         ]
         models.sort(key=lambda m: m.name.lower())
-        return models
+        return AvailableModelsResponse(models=models)
 
     # --- Admin: knowledge base (semantic RAG) ---
 

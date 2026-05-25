@@ -549,16 +549,58 @@ function Bubble({
   busy: boolean;
 }) {
   const isUser = role === "user";
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable (e.g. insecure context) — ignore */
+    }
+  }
+
+  function download() {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `mythostack-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <div className={isUser ? "flex justify-end" : "flex justify-start"}>
-      <div
-        className={
-          isUser
-            ? "max-w-[80%] whitespace-pre-wrap rounded-2xl bg-surface-card border border-surface-border px-5 py-3.5 text-sm text-text-primary shadow-sm"
-            : "max-w-[90%] whitespace-pre-wrap rounded-2xl bg-surface px-2 py-1 text-base leading-relaxed text-text-secondary"
-        }
-      >
-        {content || (busy ? <span className="animate-pulse text-accent">▋</span> : null)}
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
+        <div
+          className={
+            isUser
+              ? "max-w-[80%] whitespace-pre-wrap rounded-2xl bg-surface-card border border-surface-border px-5 py-3.5 text-sm text-text-primary shadow-sm"
+              : "max-w-[90%] whitespace-pre-wrap rounded-2xl bg-surface px-2 py-1 text-base leading-relaxed text-text-secondary"
+          }
+        >
+          {content || (busy ? <span className="animate-pulse text-accent">▋</span> : null)}
+        </div>
+        {!isUser && content && !busy && (
+          <div className="mt-1.5 flex items-center gap-4 px-2">
+            <button
+              onClick={copy}
+              className="text-[11px] font-bold uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+            >
+              {copied ? "✓ Copied" : "Copy"}
+            </button>
+            <button
+              onClick={download}
+              className="text-[11px] font-bold uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+            >
+              Download
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

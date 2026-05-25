@@ -468,21 +468,21 @@ def create_app(
 
     @app.get("/admin/models/available", response_model=list[AvailableModel])
     def available_models(user: Principal = Depends(require_admin)) -> list[AvailableModel]:
-        headers = {}
-        if settings.openrouter_api_key:
-            headers["Authorization"] = f"Bearer {settings.openrouter_api_key}"
+        # Best-effort: an empty list just means the dropdowns offer "Default
+        # (Claude)". Never error the admin page over the model catalogue.
+        if not settings.openrouter_api_key:
+            return []
         try:
             resp = httpx.get(
                 f"{settings.openrouter_base_url.rstrip('/')}/models",
-                headers=headers,
-                timeout=15.0,
+                headers={"Authorization": f"Bearer {settings.openrouter_api_key}"},
+                timeout=8.0,
             )
             resp.raise_for_status()
             data = resp.json().get("data", [])
-        except Exception as exc:  # noqa: BLE001
-            raise HTTPException(
-                status_code=502, detail=f"Could not fetch OpenRouter models: {exc}"
-            )
+        except Exception as exc:  # noqa: BLE001 — degrade to the default dropdown
+            logging.warning("OpenRouter model list unavailable: %s", exc)
+            return []
         models = [
             AvailableModel(id=m["id"], name=m.get("name") or m["id"])
             for m in data

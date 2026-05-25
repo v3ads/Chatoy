@@ -10,8 +10,20 @@ import { supabase } from "@/lib/supabase";
 const API_URL_KEY = "mythostack.apiUrl";
 const TOKEN_KEY = "mythostack.token";
 
+// The backend's public URL. Railway serves it on 443 — ":8080" is the internal
+// container port and must never appear in a browser request. Used as a fallback
+// when NEXT_PUBLIC_API_URL isn't baked into the build (e.g. a promoted preview).
+const PROD_API_URL = "https://chatoy-production.up.railway.app";
+
 const DEFAULT_API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "production" ? PROD_API_URL : "http://127.0.0.1:8000");
+
+function sanitizeApiUrl(url: string): string {
+  // Neutralize a stale/misconfigured ":8080" from any source (env, localStorage,
+  // old fallback) — requests to that port hang and never reach the backend.
+  return url.replace("up.railway.app:8080", "up.railway.app").replace(/\/+$/, "");
+}
 
 export interface AppConfig {
   apiUrl: string;
@@ -20,12 +32,13 @@ export interface AppConfig {
 
 export function getConfig(): AppConfig {
   if (typeof window === "undefined") {
-    return { apiUrl: DEFAULT_API_URL, token: "" };
+    return { apiUrl: sanitizeApiUrl(DEFAULT_API_URL), token: "" };
   }
   // The deployed API URL (NEXT_PUBLIC_API_URL) always wins, so a stale
   // localStorage value can never point the app at the wrong backend in prod.
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
+  const apiUrl = sanitizeApiUrl(
+    process.env.NEXT_PUBLIC_API_URL || localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL,
+  );
   return {
     apiUrl,
     token: localStorage.getItem(TOKEN_KEY) || "",

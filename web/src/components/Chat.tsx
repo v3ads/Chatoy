@@ -57,18 +57,12 @@ export default function Chat({
 
   useEffect(() => {
     setSessionId(crypto.randomUUID());
-    // In production, always use the env-provided API URL and clear any stale localStorage
-    const isProduction = process.env.NODE_ENV === 'production';
-    if (isProduction) {
-      const productionUrl = process.env.NEXT_PUBLIC_API_URL || 'https://chatoy-production.up.railway.app:8080';
-      setApiUrl(productionUrl);
-      setConfig({ apiUrl: productionUrl });
-      setToken('');
-    } else {
-      const cfg = getConfig();
-      setApiUrl(cfg.apiUrl);
-      setToken(cfg.token);
-    }
+    // Sync the displayed config from the resolved API URL (getConfig sanitizes
+    // away any stale ":8080" and applies the production fallback).
+    const cfg = getConfig();
+    setApiUrl(cfg.apiUrl);
+    setToken(cfg.token);
+    setConfig({ apiUrl: cfg.apiUrl });
   }, []);
 
   useEffect(() => {

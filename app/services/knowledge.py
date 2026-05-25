@@ -73,11 +73,22 @@ class SemanticFrameworkRetriever:
 
     def seed(self, chunks: list[KnowledgeChunk]) -> int:
         embeddings = self._embedder.embed([c.content for c in chunks])
+        if len(embeddings) != len(chunks):
+            raise RuntimeError(
+                f"embedder returned {len(embeddings)} vectors for {len(chunks)} chunks"
+            )
         self._store.upsert(list(zip(chunks, embeddings)))
         return self._store.count()
 
     def count(self) -> int:
         return self._store.count()
+
+    @property
+    def backend(self) -> str:
+        """Storage backend name — distinguishes a persistent pgvector store from
+        the ephemeral in-memory one (which silently loses data across restarts/
+        workers)."""
+        return type(self._store).__name__
 
     def search(self, query: str, k: int = 3, asset_type: str | None = None) -> list[str]:
         try:

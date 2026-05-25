@@ -243,6 +243,8 @@ export function setModelConfig(cfg: ModelConfig): Promise<ModelConfig> {
 export interface KnowledgeStatus {
   count: number;
   semantic: boolean;
+  backend?: string | null;
+  persistent?: boolean;
 }
 
 export function getKnowledgeStatus(): Promise<KnowledgeStatus> {

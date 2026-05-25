@@ -326,7 +326,13 @@ def create_app(
     @app.get("/admin/knowledge")
     def knowledge_status(user: Principal = Depends(require_admin)) -> dict:
         count = getattr(rag, "count", lambda: 0)()
-        return {"count": count, "semantic": hasattr(rag, "seed")}
+        backend = getattr(rag, "backend", None)
+        return {
+            "count": count,
+            "semantic": hasattr(rag, "seed"),
+            "backend": backend,
+            "persistent": backend == "PgVectorKnowledgeStore",
+        }
 
     @app.post("/admin/knowledge/seed")
     def seed_knowledge(user: Principal = Depends(require_admin)) -> dict:
@@ -335,7 +341,22 @@ def create_app(
                 status_code=400,
                 detail="Knowledge base not configured (set MYTHOSTACK_OPENAI_API_KEY).",
             )
-        count = rag.seed(SEED_CHUNKS)  # type: ignore[attr-defined]
+        try:
+            count = rag.seed(SEED_CHUNKS)  # type: ignore[attr-defined]
+        except Exception as exc:  # noqa: BLE001 — surface the real cause to the admin UI
+            raise HTTPException(
+                status_code=502,
+                detail=f"Seeding failed ({type(exc).__name__}): {exc}",
+            ) from exc
+        if count == 0:
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Seed ran but the store still holds 0 chunks. The embedding call or "
+                    "the vector insert returned nothing — verify MYTHOSTACK_OPENAI_API_KEY "
+                    "and MYTHOSTACK_DATABASE_URL on the backend."
+                ),
+            )
         return {"count": count, "chunks": len(SEED_CHUNKS)}
 
     return app

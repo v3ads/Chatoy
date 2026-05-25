@@ -78,7 +78,7 @@ export default function AdminPage() {
     setError("");
     try {
       const res = await seedKnowledge();
-      setKnowledge({ count: res.count, semantic: true });
+      setKnowledge((k) => ({ ...(k ?? { semantic: true }), count: res.count, semantic: true }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -172,6 +172,12 @@ export default function AdminPage() {
             {knowledge.semantic
               ? `${knowledge.count} chunk(s) indexed.`
               : "Semantic search isn’t configured — set the OpenAI key in Railway, then seed."}
+          </p>
+        )}
+        {knowledge?.semantic && knowledge.persistent === false && (
+          <p className="mt-1 text-sm text-amber-400">
+            Store is in-memory, not pgvector — seeded data is lost on restart and isn’t
+            shared across workers. Set MYTHOSTACK_DATABASE_URL on the backend to persist.
           </p>
         )}
         <button

@@ -21,6 +21,8 @@ from app.models import (
     AssetResponse,
     AvailableModel,
     AvailableModelsResponse,
+    BillingUrlResponse,
+    CheckoutRequest,
     ChatRequest,
     ChatResponse,
     ModelConfigResponse,
@@ -451,6 +453,34 @@ def create_app(
     ) -> dict:
         credit_store.set_auto_recharge(user.user_id, req.enabled)
         return {"status": "ok", "auto_recharge_enabled": req.enabled}
+
+    @app.post("/billing/checkout", response_model=BillingUrlResponse)
+    def billing_checkout(
+        req: CheckoutRequest, user: Principal = Depends(current_user)
+    ) -> BillingUrlResponse:
+        base = settings.frontend_url.rstrip("/")
+        url = stripe_service.create_checkout_session(
+            user_id=user.user_id,
+            email=user.email,
+            kind=req.kind,
+            success_url=f"{base}/account?billing=success",
+            cancel_url=f"{base}/account?billing=cancel",
+        )
+        if not url:
+            raise HTTPException(status_code=400, detail="Billing isn't configured yet.")
+        return BillingUrlResponse(url=url)
+
+    @app.post("/billing/portal", response_model=BillingUrlResponse)
+    def billing_portal(user: Principal = Depends(current_user)) -> BillingUrlResponse:
+        url = stripe_service.create_portal_session(
+            user.email, return_url=f"{settings.frontend_url.rstrip('/')}/account"
+        )
+        if not url:
+            raise HTTPException(
+                status_code=400,
+                detail="No subscription to manage yet, or billing isn't configured.",
+            )
+        return BillingUrlResponse(url=url)
 
     @app.post("/auth/notify-signup")
     async def notify_signup(user: Principal = Depends(current_user)):

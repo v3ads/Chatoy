@@ -108,6 +108,14 @@ def test_voice_analyze_and_get(client):
     assert client.get("/voice/me", headers=auth_header("nobody")).status_code == 404
 
 
+def test_billing_checkout_400_when_stripe_unconfigured(client):
+    h = auth_header("u4")
+    # No Stripe key in the test settings → graceful 400, never a crash.
+    r = client.post("/billing/checkout", json={"kind": "credits"}, headers=h)
+    assert r.status_code == 400
+    assert client.get("/credits", headers=h).json()["credits_balance"] >= 0
+
+
 def test_assets_log_and_list(client):
     h = auth_header("u3")
     r = client.post(

@@ -295,7 +295,7 @@ export function seedKnowledge(): Promise<SeedResult> {
   });
 }
 
-// --- Current user ---
+// --- Current user, credits & billing ---
 
 export interface Me {
   user_id: string;
@@ -305,6 +305,42 @@ export interface Me {
 
 export function getMe(): Promise<Me> {
   return adminFetch<Me>("/me");
+}
+
+export interface Credits {
+  user_id: string;
+  credits_balance: number;
+  auto_recharge_enabled: boolean;
+}
+
+export function getCredits(): Promise<Credits> {
+  return adminFetch<Credits>("/credits");
+}
+
+export function setAutoRecharge(
+  enabled: boolean,
+): Promise<{ status: string; auto_recharge_enabled: boolean }> {
+  return adminFetch("/credits/auto-recharge", {
+    method: "POST",
+    body: JSON.stringify({ enabled }),
+  });
+}
+
+export function startCheckout(kind: "credits" | "pro"): Promise<{ url: string }> {
+  return adminFetch("/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ kind }),
+  });
+}
+
+export function openBillingPortal(): Promise<{ url: string }> {
+  return adminFetch("/billing/portal", { method: "POST" });
+}
+
+export function formatCredits(balance: number | null | undefined): string {
+  if (balance == null) return "—";
+  if (balance >= 100000) return "Unlimited";
+  return Math.round(balance).toLocaleString();
 }
 
 // --- Projects (per-user workspaces) ---

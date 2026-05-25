@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 import stripe
 from app.config import Settings
 from app.db.factory import CreditStore
+
+logger = logging.getLogger(__name__)
+
 
 class StripeService:
     def __init__(self, settings: Settings, credit_store: CreditStore):
@@ -10,6 +15,59 @@ class StripeService:
         self.credit_store = credit_store
         if settings.stripe_api_key:
             stripe.api_key = settings.stripe_api_key
+
+    @property
+    def configured(self) -> bool:
+        return bool(self.settings.stripe_api_key)
+
+    def create_checkout_session(
+        self,
+        user_id: str,
+        email: str | None,
+        kind: str,
+        success_url: str,
+        cancel_url: str,
+    ) -> str | None:
+        """Return a Stripe Checkout URL for a credit pack ('credits') or the Pro
+        subscription ('pro'), or None if billing isn't configured."""
+        if not self.settings.stripe_api_key:
+            return None
+        if kind == "pro":
+            price, mode = self.settings.stripe_pro_price_id, "subscription"
+        else:
+            price, mode = self.settings.stripe_credit_pack_price_id, "payment"
+        if not price:
+            return None
+        try:
+            session = stripe.checkout.Session.create(
+                mode=mode,
+                line_items=[{"price": price, "quantity": 1}],
+                client_reference_id=user_id,
+                customer_email=email or None,
+                success_url=success_url,
+                cancel_url=cancel_url,
+            )
+            return session.url
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Stripe checkout session failed: %s", exc)
+            return None
+
+    def create_portal_session(self, email: str | None, return_url: str) -> str | None:
+        """Return a Stripe billing-portal URL for the customer with this email,
+        or None if there's no such customer / billing isn't configured."""
+        if not self.settings.stripe_api_key or not email:
+            return None
+        try:
+            customers = stripe.Customer.list(email=email, limit=1)
+            if not customers.data:
+                return None
+            session = stripe.billing_portal.Session.create(
+                customer=customers.data[0].id, return_url=return_url
+            )
+            return session.url
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Stripe portal session failed: %s", exc)
+            return None
 
     def handle_webhook(self, payload: str, sig_header: str):
         if not self.settings.stripe_webhook_secret:

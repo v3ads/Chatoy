@@ -95,6 +95,14 @@ class AutoRechargeRequest(BaseModel):
     enabled: bool
 
 
+class CheckoutRequest(BaseModel):
+    kind: str = Field("credits", description="'credits' (one-time pack) or 'pro' (subscription).")
+
+
+class BillingUrlResponse(BaseModel):
+    url: str
+
+
 class AvailableModel(BaseModel):
     id: str
     name: str

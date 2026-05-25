@@ -179,7 +179,7 @@ def create_app(
                     project.business_profile = profile
                     project_store.update(project.id, business_profile=profile)
                 if state.get("website_url") != url or not state.get("website_content"):
-                    content = scraper.scrape(url)
+                    content = scraper.gather(url)
                     if content:
                         state["website_url"] = url
                         state["website_content"] = content

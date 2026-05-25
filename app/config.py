@@ -70,6 +70,8 @@ class Settings(BaseSettings):
     # business straight from their site. Unset → the feature is simply skipped.
     firecrawl_api_key: str | None = None
     firecrawl_base_url: str = "https://api.firecrawl.dev"
+    # How many of the most relevant pages (home, pricing, about, product…) to pull.
+    firecrawl_max_pages: int = 6
 
     # After each turn, run a cheap extraction to fold newly stated business
     # facts into the active project's profile (one small model call per turn).

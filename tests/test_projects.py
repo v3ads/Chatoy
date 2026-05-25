@@ -91,9 +91,9 @@ class _FakeScraper:
     def __init__(self) -> None:
         self.calls: list[str] = []
 
-    def scrape(self, url: str) -> str:
+    def gather(self, url: str) -> str:
         self.calls.append(url)
-        return f"# {url}\nWe sell artisanal cold brew to remote software teams."
+        return f"## Page: {url}\nWe sell artisanal cold brew to remote software teams."
 
 
 def test_website_in_message_is_scraped_into_context():

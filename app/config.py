@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     openrouter_api_key: str | None = None
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
+    # OpenAI embeddings power the pgvector knowledge base (semantic RAG). When
+    # unset, the app falls back to the built-in keyword framework library.
+    openai_api_key: str | None = None
+    openai_base_url: str = "https://api.openai.com/v1"
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dim: int = 1536
+
     # Force the deterministic offline LLM even when a key is present.
     use_fake_llm: bool = False
 

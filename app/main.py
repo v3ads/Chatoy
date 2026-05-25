@@ -29,8 +29,10 @@ from app.models import (
 )
 from app.db.factory import build_stores, CreditStore
 from app.db.model_config_store import build_model_config_store
+from app.db.knowledge_store import build_knowledge_retriever
 from app.llm.resolver import ModelResolver, ResolvingLLM
 from app.services.model_config import ModelConfigStore
+from app.services.knowledge_seed import SEED_CHUNKS
 from app.orchestrator import Orchestrator
 from app.services.memory import AssetLog, MarketingAsset
 from app.services.rag import FrameworkRetriever, InMemoryFrameworkRetriever
@@ -74,7 +76,7 @@ def create_app(
     model_config_store = model_config_store or build_model_config_store(settings)
     resolver = ModelResolver(settings, model_config_store)
 
-    rag = rag or InMemoryFrameworkRetriever()
+    rag = rag or build_knowledge_retriever(settings)
     stripe_service = stripe_service or StripeService(settings, credit_store)
     email_service = email_service or EmailService(settings)
     voice_llm = voice_llm or ResolvingLLM("voice", resolver)
@@ -318,6 +320,23 @@ def create_app(
         ]
         models.sort(key=lambda m: m.name.lower())
         return models
+
+    # --- Admin: knowledge base (semantic RAG) ---
+
+    @app.get("/admin/knowledge")
+    def knowledge_status(user: Principal = Depends(require_admin)) -> dict:
+        count = getattr(rag, "count", lambda: 0)()
+        return {"count": count, "semantic": hasattr(rag, "seed")}
+
+    @app.post("/admin/knowledge/seed")
+    def seed_knowledge(user: Principal = Depends(require_admin)) -> dict:
+        if not hasattr(rag, "seed"):
+            raise HTTPException(
+                status_code=400,
+                detail="Knowledge base not configured (set MYTHOSTACK_OPENAI_API_KEY).",
+            )
+        count = rag.seed(SEED_CHUNKS)  # type: ignore[attr-defined]
+        return {"count": count, "chunks": len(SEED_CHUNKS)}
 
     return app
 

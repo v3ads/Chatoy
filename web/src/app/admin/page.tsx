@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   AvailableModel,
+  KnowledgeStatus,
   ModelConfig,
   getAvailableModels,
+  getKnowledgeStatus,
   getModelConfig,
+  seedKnowledge,
   setModelConfig,
 } from "@/lib/api";
 
@@ -29,13 +32,20 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [knowledge, setKnowledge] = useState<KnowledgeStatus | null>(null);
+  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [cfg, list] = await Promise.all([getModelConfig(), getAvailableModels()]);
+        const [cfg, list, kb] = await Promise.all([
+          getModelConfig(),
+          getAvailableModels(),
+          getKnowledgeStatus(),
+        ]);
         setConfig(cfg);
         setModels(list);
+        setKnowledge(kb);
       } catch (e) {
         const status = (e as { status?: number }).status;
         if (status === 401 || status === 403) {
@@ -60,6 +70,19 @@ export default function AdminPage() {
       setError((e as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function seed() {
+    setSeeding(true);
+    setError("");
+    try {
+      const res = await seedKnowledge();
+      setKnowledge({ count: res.count, semantic: true });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSeeding(false);
     }
   }
 
@@ -137,6 +160,28 @@ export default function AdminPage() {
           </span>
         )}
       </div>
+
+      <section className="mt-12 border-t border-surface-border pt-8">
+        <h2 className="text-lg font-semibold tracking-tight">Knowledge base</h2>
+        <p className="mt-1 text-sm text-text-muted">
+          Direct-response frameworks the Architect and Writer retrieve from via semantic
+          search.
+        </p>
+        {knowledge && (
+          <p className="mt-3 text-sm text-text-secondary">
+            {knowledge.semantic
+              ? `${knowledge.count} chunk(s) indexed.`
+              : "Semantic search isn’t configured — set the OpenAI key in Railway, then seed."}
+          </p>
+        )}
+        <button
+          onClick={seed}
+          disabled={seeding || !knowledge?.semantic}
+          className="mt-3 rounded-lg border border-surface-border px-4 py-2 text-sm text-text-secondary hover:text-text-primary disabled:opacity-40"
+        >
+          {seeding ? "Seeding…" : "Seed / refresh knowledge base"}
+        </button>
+      </section>
     </main>
   );
 }

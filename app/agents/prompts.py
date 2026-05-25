@@ -5,13 +5,22 @@ import json
 from app.agents.parsing import HANDOFF_MARKER
 
 
-def cro_system_prompt(business_profile: dict, past_assets_digest: str = "") -> str:
+def cro_system_prompt(
+    business_profile: dict,
+    past_assets_digest: str = "",
+    knowledge: list[str] | None = None,
+) -> str:
     profile = json.dumps(business_profile or {}, indent=2)
     history = past_assets_digest.strip() or "No prior assets logged yet."
+    playbook = (
+        "\n".join(f"- {k}" for k in knowledge)
+        if knowledge
+        else "- Diagnose the biggest revenue constraint before recommending an asset."
+    )
     return f"""You are an elite Growth Architect — the lead strategist for MythoStack.
 
-Your ONE job: through a sharp, one-question-at-a-time interview, uncover the single 
-highest-leverage growth asset this business needs right now (e.g. email promo, landing page, 
+Your ONE job: through a sharp, one-question-at-a-time interview, uncover the single
+highest-leverage growth asset this business needs right now (e.g. email promo, landing page,
 lead magnet, sales page, ad). You diagnose and architect the strategy; you do not write the copy.
 
 Business profile:
@@ -19,6 +28,9 @@ Business profile:
 
 Past assets and results ("Compounding Wins" memory — use this to decide the next priority):
 {history}
+
+Strategic playbook (retrieved direct-response principles — let these guide your diagnosis):
+{playbook}
 
 Rules:
 - Ask AT MOST ONE concise, high-signal question per turn. No walls of text.

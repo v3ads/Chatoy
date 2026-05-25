@@ -32,7 +32,7 @@ def build_graph(
     writer_llm = writer_llm or architect_llm
 
     workflow = StateGraph(AgentState)
-    workflow.add_node(ARCHITECT, make_architect_node(architect_llm, memory=memory))
+    workflow.add_node(ARCHITECT, make_architect_node(architect_llm, memory=memory, rag=rag))
     workflow.add_node(WRITER, make_writer_node(writer_llm, rag=rag))
 
     def entry_router(state: AgentState) -> str:

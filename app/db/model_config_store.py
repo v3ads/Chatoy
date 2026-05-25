@@ -51,7 +51,13 @@ def build_model_config_store(settings: Settings) -> ModelConfigStore:
     if not settings.use_database:
         return InMemoryModelConfigStore()
 
-    from app.db.base import make_engine, make_session_factory
+    from sqlalchemy.orm import sessionmaker
 
-    engine = make_engine(settings.database_url)  # type: ignore[arg-type]
-    return SqlModelConfigStore(make_session_factory(engine))
+    from app.db.engine import shared_engine
+
+    sf = sessionmaker(
+        bind=shared_engine(settings.database_url),  # type: ignore[arg-type]
+        expire_on_commit=False,
+        future=True,
+    )
+    return SqlModelConfigStore(sf)

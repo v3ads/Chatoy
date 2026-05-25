@@ -239,3 +239,18 @@ export function setModelConfig(cfg: ModelConfig): Promise<ModelConfig> {
     body: JSON.stringify(cfg),
   });
 }
+
+export interface KnowledgeStatus {
+  count: number;
+  semantic: boolean;
+}
+
+export function getKnowledgeStatus(): Promise<KnowledgeStatus> {
+  return adminFetch<KnowledgeStatus>("/admin/knowledge");
+}
+
+export function seedKnowledge(): Promise<{ count: number; chunks: number }> {
+  return adminFetch<{ count: number; chunks: number }>("/admin/knowledge/seed", {
+    method: "POST",
+  });
+}

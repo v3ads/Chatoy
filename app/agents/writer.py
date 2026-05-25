@@ -32,7 +32,16 @@ def make_writer_node(
         frameworks: list[str] = []
         asset_type = strategy.get("asset_type") if isinstance(strategy, dict) else None
         if rag is not None and asset_type:
-            frameworks = rag.retrieve(asset_type, k=3)
+            query = " ".join(
+                str(strategy.get(key, ""))
+                for key in ("asset_type", "marketing_angle", "audience", "primary_goal")
+            ).strip()
+            search = getattr(rag, "search", None)
+            frameworks = (
+                search(query, k=3, asset_type=asset_type)
+                if search
+                else rag.retrieve(asset_type, k=3)
+            )
 
         system = shepherd_system_prompt(strategy, voice, frameworks)
         copy = llm.invoke(system, _ensure_user_turn(messages))

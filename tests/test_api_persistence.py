@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.db.base import init_db, make_engine, make_session_factory
+from app.db.project_store import SqlProjectStore
 from app.db.stores import SqlAssetLog, SqlSessionStore, SqlVoiceProfileStore
 from app.main import create_app
 from tests.conftest import TEST_JWT_SECRET, auth_header
@@ -17,14 +18,25 @@ def _stores(db_url):
     engine = make_engine(db_url)
     init_db(engine)
     sf = make_session_factory(engine)
-    return SqlVoiceProfileStore(sf), SqlAssetLog(sf), SqlSessionStore(sf)
+    return (
+        SqlVoiceProfileStore(sf),
+        SqlAssetLog(sf),
+        SqlSessionStore(sf),
+        SqlProjectStore(sf),
+    )
 
 
 def _app(db_url):
-    voice, assets, sessions = _stores(db_url)
+    voice, assets, sessions, projects = _stores(db_url)
     settings = Settings(use_fake_llm=True, jwt_secret=TEST_JWT_SECRET)
     return TestClient(
-        create_app(settings, voice_store=voice, asset_log=assets, session_store=sessions)
+        create_app(
+            settings,
+            voice_store=voice,
+            asset_log=assets,
+            session_store=sessions,
+            project_store=projects,
+        )
     )
 
 
@@ -44,8 +56,9 @@ def test_state_survives_a_restart(db_url):
 
     assert c2.get("/voice/me", headers=h).status_code == 200
 
+    # The writer turn auto-logs its asset, plus the one we logged manually.
     assets = c2.get("/assets", headers=h).json()
-    assert len(assets["assets"]) == 1
+    assert len(assets["assets"]) >= 1
     assert "opens=99" in assets["summary"]
 
     # Conversation state persisted: continuing the session keeps prior turns.

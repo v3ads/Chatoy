@@ -28,15 +28,17 @@ class Orchestrator:
         *,
         memory: AssetLog | None = None,
         rag: FrameworkRetriever | None = None,
+        recall=None,
         credits: CreditStore | None = None,
     ) -> None:
         self._cro_llm = cro_llm
         self._shepherd_llm = shepherd_llm or cro_llm
         self._memory = memory
         self._rag = rag
+        self._recall = recall
         self._credits = credits
         self._graph = build_graph(
-            self._cro_llm, self._shepherd_llm, memory=memory, rag=rag
+            self._cro_llm, self._shepherd_llm, memory=memory, rag=rag, recall=recall
         )
 
     def _check_credits(self, state: AgentState) -> None:
@@ -83,7 +85,7 @@ class Orchestrator:
         cro_tap = StreamingTap(self._cro_llm, sink, filter_factory)
         shepherd_tap = StreamingTap(self._shepherd_llm, sink, filter_factory)
         graph = build_graph(
-            cro_tap, shepherd_tap, memory=self._memory, rag=self._rag
+            cro_tap, shepherd_tap, memory=self._memory, rag=self._rag, recall=self._recall
         )
 
         def run_graph() -> None:

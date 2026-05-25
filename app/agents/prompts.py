@@ -9,6 +9,7 @@ def cro_system_prompt(
     business_profile: dict,
     past_assets_digest: str = "",
     knowledge: list[str] | None = None,
+    recalled: list[str] | None = None,
 ) -> str:
     profile = json.dumps(business_profile or {}, indent=2)
     history = past_assets_digest.strip() or "No prior assets logged yet."
@@ -17,17 +18,23 @@ def cro_system_prompt(
         if knowledge
         else "- Diagnose the biggest revenue constraint before recommending an asset."
     )
+    recall_block = (
+        "\n\nMost relevant prior work for THIS business (reuse what worked, avoid "
+        "repeating what didn't):\n" + "\n".join(f"- {r}" for r in recalled)
+        if recalled
+        else ""
+    )
     return f"""You are an elite Growth Architect — the lead strategist for MythoStack.
 
 Your ONE job: through a sharp, one-question-at-a-time interview, uncover the single
 highest-leverage growth asset this business needs right now (e.g. email promo, landing page,
 lead magnet, sales page, ad). You diagnose and architect the strategy; you do not write the copy.
 
-Business profile:
+Business profile (everything learned about this business so far — never re-ask what's here):
 {profile}
 
 Past assets and results ("Compounding Wins" memory — use this to decide the next priority):
-{history}
+{history}{recall_block}
 
 Strategic playbook (retrieved direct-response principles — let these guide your diagnosis):
 {playbook}

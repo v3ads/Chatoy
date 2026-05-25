@@ -59,11 +59,11 @@ def test_voice_store_roundtrip():
 
 def test_asset_log_summarize():
     log = InMemoryAssetLog()
-    assert log.summarize("u1") == ""
-    log.add(MarketingAsset(user_id="u1", asset_type="email_promo", metrics={"opens": 42}))
-    log.add(MarketingAsset(user_id="u1", asset_type="landing_page", marketing_angle="speed"))
-    summary = log.summarize("u1")
+    assert log.summarize("p1") == ""
+    log.add(MarketingAsset(user_id="u1", project_id="p1", asset_type="email_promo", metrics={"opens": 42}))
+    log.add(MarketingAsset(user_id="u1", project_id="p1", asset_type="landing_page", marketing_angle="speed"))
+    summary = log.summarize("p1")
     assert "2 prior asset(s)" in summary
     assert "opens=42" in summary
     assert "angle: speed" in summary
-    assert len(log.list_for("u1")) == 2
+    assert len(log.list_for("p1")) == 2

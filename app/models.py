@@ -8,8 +8,11 @@ from app.agents.state import Message
 class ChatRequest(BaseModel):
     session_id: str = Field(..., description="Conversation id; threads state across turns.")
     message: str = Field(..., min_length=1)
+    project_id: str | None = Field(
+        None, description="Active project. Omit to use the user's default project."
+    )
     business_profile: dict | None = Field(
-        None, description="Set once at session start; persisted on the session state."
+        None, description="Optional overrides merged into the project's profile."
     )
 
 
@@ -24,6 +27,7 @@ class ChatResponse(BaseModel):
 
 class VoiceAnalyzeRequest(BaseModel):
     samples: list[str] = Field(..., min_length=1)
+    project_id: str | None = None
 
 
 class VoiceProfileResponse(BaseModel):
@@ -37,10 +41,18 @@ class AssetCreateRequest(BaseModel):
     marketing_angle: str = ""
     content: str = ""
     metrics: dict = Field(default_factory=dict)
+    project_id: str | None = None
+
+
+class AssetMetricsUpdate(BaseModel):
+    metrics: dict = Field(..., description="Reported results, e.g. {'open_rate': '42%'}.")
+    project_id: str | None = None
 
 
 class AssetResponse(BaseModel):
+    id: int | None = None
     user_id: str
+    project_id: str = ""
     asset_type: str
     marketing_angle: str
     content: str
@@ -50,8 +62,27 @@ class AssetResponse(BaseModel):
 
 class AssetListResponse(BaseModel):
     user_id: str
+    project_id: str = ""
     assets: list[AssetResponse]
     summary: str
+
+
+class ProjectResponse(BaseModel):
+    id: str
+    name: str
+    business_profile: dict = Field(default_factory=dict)
+    voice_profile: dict = Field(default_factory=dict)
+    created_at: str
+    updated_at: str
+
+
+class ProjectCreateRequest(BaseModel):
+    name: str = Field("My Project", min_length=1, max_length=255)
+
+
+class ProjectUpdateRequest(BaseModel):
+    name: str | None = Field(None, max_length=255)
+    business_profile: dict | None = None
 
 
 class CreditResponse(BaseModel):

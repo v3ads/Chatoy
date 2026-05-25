@@ -30,10 +30,11 @@ def test_voice_store_roundtrip_and_upsert(session_factory):
 
 def test_asset_log_orders_and_summarizes(session_factory):
     log = SqlAssetLog(session_factory)
-    assert log.list_for("u1") == []
+    assert log.list_for("p1") == []
     log.add(
         MarketingAsset(
             user_id="u1",
+            project_id="p1",
             asset_type="landing_page",
             marketing_angle="speed",
             created_at="2026-01-01T00:00:00+00:00",
@@ -42,19 +43,27 @@ def test_asset_log_orders_and_summarizes(session_factory):
     log.add(
         MarketingAsset(
             user_id="u1",
+            project_id="p1",
             asset_type="email_promo",
             metrics={"opens": 42},
             created_at="2026-02-01T00:00:00+00:00",
         )
     )
-    log.add(MarketingAsset(user_id="other", asset_type="ad"))
+    # Different project (even same user) stays isolated.
+    log.add(MarketingAsset(user_id="u1", project_id="p2", asset_type="ad"))
 
-    assets = log.list_for("u1")
+    assets = log.list_for("p1")
     assert [a.asset_type for a in assets] == ["landing_page", "email_promo"]
-    summary = log.summarize("u1")
+    summary = log.summarize("p1")
     assert "2 prior asset(s)" in summary
     assert "opens=42" in summary
     assert "angle: speed" in summary
+
+    # Metrics can be reported after the fact (feature: results reporting).
+    target = assets[1]
+    updated = log.update_metrics(target.id, {"revenue": 500}, project_id="p1")
+    assert updated is not None and updated.metrics["revenue"] == 500
+    assert "revenue=500" in log.summarize("p1")
 
 
 def test_session_store_set_get_reset(session_factory):

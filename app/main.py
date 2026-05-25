@@ -16,12 +16,16 @@ from app.config import Settings, get_settings
 from app.models import (
     AssetCreateRequest,
     AssetListResponse,
+    AssetMetricsUpdate,
     AssetResponse,
     AvailableModel,
     ChatRequest,
     ChatResponse,
     ModelConfigResponse,
     ModelConfigUpdate,
+    ProjectCreateRequest,
+    ProjectResponse,
+    ProjectUpdateRequest,
     VoiceAnalyzeRequest,
     VoiceProfileResponse,
     CreditResponse,
@@ -30,11 +34,15 @@ from app.models import (
 from app.db.factory import build_stores, CreditStore
 from app.db.model_config_store import build_model_config_store
 from app.db.knowledge_store import build_knowledge_retriever
+from app.db.project_store import build_project_store
+from app.db.project_memory import build_project_recall
 from app.llm.resolver import ModelResolver, ResolvingLLM
 from app.services.model_config import ModelConfigStore
 from app.services.knowledge_seed import SEED_CHUNKS
 from app.orchestrator import Orchestrator
 from app.services.memory import AssetLog, MarketingAsset
+from app.services.profile_extract import evolve_business_profile
+from app.services.projects import Project, ProjectStore, merge_profile
 from app.services.rag import FrameworkRetriever, InMemoryFrameworkRetriever
 from app.services.stripe import StripeService
 from app.services.email import EmailService
@@ -58,6 +66,7 @@ def create_app(
     session_store: SessionStore | None = None,
     credit_store: CreditStore | None = None,
     model_config_store: ModelConfigStore | None = None,
+    project_store: ProjectStore | None = None,
     rag: FrameworkRetriever | None = None,
     stripe_service: StripeService | None = None,
     email_service: EmailService | None = None,
@@ -76,7 +85,9 @@ def create_app(
     model_config_store = model_config_store or build_model_config_store(settings)
     resolver = ModelResolver(settings, model_config_store)
 
+    project_store = project_store or build_project_store(settings)
     rag = rag or build_knowledge_retriever(settings)
+    recall = build_project_recall(settings)
     stripe_service = stripe_service or StripeService(settings, credit_store)
     email_service = email_service or EmailService(settings)
     voice_llm = voice_llm or ResolvingLLM("voice", resolver)
@@ -85,6 +96,7 @@ def create_app(
         ResolvingLLM("writer", resolver),
         memory=asset_log,
         rag=rag,
+        recall=recall,
         credits=credit_store,
     )
 
@@ -109,6 +121,8 @@ def create_app(
     app.state.auth = auth
     app.state.model_config_store = model_config_store
     app.state.model_resolver = resolver
+    app.state.project_store = project_store
+    app.state.project_recall = recall
 
     def current_user(
         creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
@@ -120,38 +134,96 @@ def create_app(
             raise HTTPException(status_code=403, detail="Admin access required")
         return user
 
-    def _session_key(user_id: str, session_id: str) -> str:
-        # Namespacing by tenant makes sessions inherently per-user, so one
-        # tenant can never read or resume another's conversation.
-        return f"{user_id}:{session_id}"
+    def _session_key(project_id: str, session_id: str) -> str:
+        # Sessions are namespaced by project (which is owned by one user), so a
+        # conversation's state is inherently scoped to its project.
+        return f"{project_id}:{session_id}"
+
+    def _resolve_project(user: Principal, project_id: str | None) -> Project:
+        if project_id:
+            project = project_store.get(project_id)
+            if project is None or project.user_id != user.user_id:
+                raise HTTPException(status_code=404, detail="Project not found")
+            return project
+        return project_store.ensure_default(user.user_id)
 
     def _prepare_state(
         req: ChatRequest, user: Principal
-    ) -> tuple[AgentState, int, str]:
-        skey = _session_key(user.user_id, req.session_id)
+    ) -> tuple[AgentState, int, str, Project]:
+        project = _resolve_project(user, req.project_id)
+        skey = _session_key(project.id, req.session_id)
         state: AgentState = dict(session_store.get(skey))
         messages = list(state.get("messages", []))
         state["user_id"] = user.user_id
         state["user_email"] = user.email
-        if req.business_profile is not None:
-            state["business_profile"] = req.business_profile
-        if not state.get("voice_profile"):
-            profile = voice_store.get(user.user_id)
-            if profile:
-                state["voice_profile"] = render_voice_profile(profile)
+        state["project_id"] = project.id
+        # Always start from the project's accumulated profile; merge any
+        # per-request overrides on top so the agent has the full picture.
+        profile = dict(project.business_profile or {})
+        if req.business_profile:
+            profile = merge_profile(profile, req.business_profile)
+        state["business_profile"] = profile
+        if not state.get("voice_profile") and project.voice_profile:
+            state["voice_profile"] = render_voice_profile(project.voice_profile)
         messages.append({"role": "user", "content": req.message})
         state["messages"] = messages
-        return state, len(messages), skey
+        return state, len(messages), skey, project
+
+    def _post_turn(final: AgentState, project: Project) -> None:
+        """The learning loop: log the asset just produced, remember it for
+        semantic recall, and evolve the project's business profile."""
+        messages = final.get("messages", [])
+        strategy = final.get("current_strategy") or {}
+
+        # (#1)+(#4) The writer produced an asset this turn — log and remember it.
+        if final.get("next_step") == "refine" and strategy:
+            content = next(
+                (m["content"] for m in reversed(messages) if m.get("role") == "assistant"),
+                "",
+            )
+            if content.strip():
+                asset_type = str(strategy.get("asset_type") or "general")
+                asset_log.add(
+                    MarketingAsset(
+                        user_id=final.get("user_id", ""),
+                        project_id=project.id,
+                        asset_type=asset_type,
+                        marketing_angle=str(strategy.get("marketing_angle") or ""),
+                        content=content,
+                    )
+                )
+                if recall is not None:
+                    recall.remember(project.id, asset_type, content)
+
+        # (#3) Fold newly stated facts (and any locked strategy) into the profile.
+        if settings.profile_evolution:
+            last_user = next(
+                (m["content"] for m in reversed(messages) if m.get("role") == "user"), ""
+            )
+            try:
+                merged = evolve_business_profile(voice_llm, project.business_profile, last_user)
+                if strategy:
+                    merged = merge_profile(
+                        merged,
+                        {
+                            k: strategy.get(k)
+                            for k in ("audience", "primary_goal", "marketing_angle")
+                        },
+                    )
+                if merged != (project.business_profile or {}):
+                    project_store.update(project.id, business_profile=merged)
+            except Exception:  # noqa: BLE001 — learning is best-effort, never fatal
+                pass
 
     def _finish(
-        req: ChatRequest, final: AgentState, prefix_len: int, skey: str
+        req: ChatRequest, final: AgentState, prefix_len: int, skey: str, project: Project
     ) -> ChatResponse:
         session_store.set(skey, final)
         new_messages = final.get("messages", [])[prefix_len:]
         reply = "\n\n".join(
             m["content"] for m in new_messages if m.get("role") == "assistant"
         )
-        return ChatResponse(
+        resp = ChatResponse(
             session_id=req.session_id,
             reply=reply,
             new_messages=new_messages,
@@ -159,6 +231,8 @@ def create_app(
             current_strategy=final.get("current_strategy"),
             retrieved_frameworks=final.get("retrieved_frameworks", []),
         )
+        _post_turn(final, project)
+        return resp
 
     @app.get("/health")
     def health() -> dict:
@@ -168,15 +242,15 @@ def create_app(
     def chat(
         req: ChatRequest, user: Principal = Depends(current_user)
     ) -> ChatResponse:
-        state, prefix_len, skey = _prepare_state(req, user)
+        state, prefix_len, skey, project = _prepare_state(req, user)
         final = orchestrator.run(state)
-        return _finish(req, final, prefix_len, skey)
+        return _finish(req, final, prefix_len, skey, project)
 
     @app.post("/chat/stream")
     async def chat_stream(
         req: ChatRequest, user: Principal = Depends(current_user)
     ) -> EventSourceResponse:
-        state, prefix_len, skey = _prepare_state(req, user)
+        state, prefix_len, skey, project = _prepare_state(req, user)
 
         async def event_gen() -> AsyncIterator[dict]:
             async for kind, payload in orchestrator.stream(state):
@@ -185,7 +259,7 @@ def create_app(
                 elif kind == "error":
                     yield {"event": "error", "data": str(payload)}
                 elif kind == "final":
-                    resp = _finish(req, payload, prefix_len, skey)  # type: ignore[arg-type]
+                    resp = _finish(req, payload, prefix_len, skey, project)  # type: ignore[arg-type]
                     yield {"event": "final", "data": resp.model_dump_json()}
             yield {"event": "done", "data": "[DONE]"}
 
@@ -193,17 +267,77 @@ def create_app(
 
     @app.delete("/sessions/{session_id}")
     def reset_session(
-        session_id: str, user: Principal = Depends(current_user)
+        session_id: str,
+        user: Principal = Depends(current_user),
+        project_id: str | None = None,
     ) -> dict:
-        session_store.reset(_session_key(user.user_id, session_id))
+        project = _resolve_project(user, project_id)
+        session_store.reset(_session_key(project.id, session_id))
         return {"status": "reset", "session_id": session_id}
+
+    # --- Projects (per-user workspaces that hold per-project intelligence) ---
+
+    def _project_response(p: Project) -> ProjectResponse:
+        return ProjectResponse(
+            id=p.id,
+            name=p.name,
+            business_profile=p.business_profile or {},
+            voice_profile=p.voice_profile or {},
+            created_at=p.created_at,
+            updated_at=p.updated_at,
+        )
+
+    @app.get("/projects", response_model=list[ProjectResponse])
+    def list_projects(user: Principal = Depends(current_user)) -> list[ProjectResponse]:
+        projects = project_store.list_for(user.user_id)
+        if not projects:
+            projects = [project_store.ensure_default(user.user_id)]
+        return [_project_response(p) for p in projects]
+
+    @app.post("/projects", response_model=ProjectResponse)
+    def create_project(
+        req: ProjectCreateRequest, user: Principal = Depends(current_user)
+    ) -> ProjectResponse:
+        return _project_response(project_store.create(user.user_id, req.name))
+
+    @app.get("/projects/{project_id}", response_model=ProjectResponse)
+    def get_project(
+        project_id: str, user: Principal = Depends(current_user)
+    ) -> ProjectResponse:
+        return _project_response(_resolve_project(user, project_id))
+
+    @app.put("/projects/{project_id}", response_model=ProjectResponse)
+    def update_project(
+        project_id: str,
+        req: ProjectUpdateRequest,
+        user: Principal = Depends(current_user),
+    ) -> ProjectResponse:
+        project = _resolve_project(user, project_id)
+        business_profile = (
+            merge_profile(project.business_profile, req.business_profile)
+            if req.business_profile is not None
+            else None
+        )
+        updated = project_store.update(
+            project_id, name=req.name, business_profile=business_profile
+        )
+        return _project_response(updated or project)
+
+    @app.delete("/projects/{project_id}")
+    def delete_project(
+        project_id: str, user: Principal = Depends(current_user)
+    ) -> dict:
+        _resolve_project(user, project_id)  # 404s unless the caller owns it
+        project_store.delete(project_id)
+        return {"status": "deleted", "id": project_id}
 
     @app.post("/voice/analyze", response_model=VoiceProfileResponse)
     def voice_analyze(
         req: VoiceAnalyzeRequest, user: Principal = Depends(current_user)
     ) -> VoiceProfileResponse:
+        project = _resolve_project(user, req.project_id)
         profile = analyze_voice(voice_llm, req.samples)
-        voice_store.save(user.user_id, profile)
+        project_store.update(project.id, voice_profile=profile)
         return VoiceProfileResponse(
             user_id=user.user_id,
             profile=profile,
@@ -211,10 +345,13 @@ def create_app(
         )
 
     @app.get("/voice/me", response_model=VoiceProfileResponse)
-    def voice_get(user: Principal = Depends(current_user)) -> VoiceProfileResponse:
-        profile = voice_store.get(user.user_id)
-        if profile is None:
-            raise HTTPException(status_code=404, detail="No voice profile for user")
+    def voice_get(
+        user: Principal = Depends(current_user), project_id: str | None = None
+    ) -> VoiceProfileResponse:
+        project = _resolve_project(user, project_id)
+        profile = project.voice_profile
+        if not profile:
+            raise HTTPException(status_code=404, detail="No voice profile for this project")
         return VoiceProfileResponse(
             user_id=user.user_id,
             profile=profile,
@@ -225,25 +362,45 @@ def create_app(
     def create_asset(
         req: AssetCreateRequest, user: Principal = Depends(current_user)
     ) -> AssetResponse:
+        project = _resolve_project(user, req.project_id)
         asset = asset_log.add(
             MarketingAsset(
                 user_id=user.user_id,
+                project_id=project.id,
                 asset_type=req.asset_type,
                 marketing_angle=req.marketing_angle,
                 content=req.content,
                 metrics=req.metrics,
             )
         )
+        if recall is not None and req.content.strip():
+            recall.remember(project.id, req.asset_type, req.content)
         return AssetResponse(**asset.__dict__)
 
     @app.get("/assets", response_model=AssetListResponse)
-    def list_assets(user: Principal = Depends(current_user)) -> AssetListResponse:
-        assets = asset_log.list_for(user.user_id)
+    def list_assets(
+        user: Principal = Depends(current_user), project_id: str | None = None
+    ) -> AssetListResponse:
+        project = _resolve_project(user, project_id)
+        assets = asset_log.list_for(project.id)
         return AssetListResponse(
             user_id=user.user_id,
+            project_id=project.id,
             assets=[AssetResponse(**a.__dict__) for a in assets],
-            summary=asset_log.summarize(user.user_id),
+            summary=asset_log.summarize(project.id),
         )
+
+    @app.patch("/assets/{asset_id}", response_model=AssetResponse)
+    def report_asset_metrics(
+        asset_id: int,
+        req: AssetMetricsUpdate,
+        user: Principal = Depends(current_user),
+    ) -> AssetResponse:
+        project = _resolve_project(user, req.project_id)
+        updated = asset_log.update_metrics(asset_id, req.metrics, project_id=project.id)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="Asset not found")
+        return AssetResponse(**updated.__dict__)
 
     @app.get("/credits", response_model=CreditResponse)
     def get_credits(user: Principal = Depends(current_user)) -> CreditResponse:

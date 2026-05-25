@@ -25,6 +25,8 @@ class AgentState(TypedDict, total=False):
 
     messages: list[Message]
     user_id: str
+    user_email: str
+    project_id: str
     business_profile: dict
     voice_profile: str
     current_strategy: dict

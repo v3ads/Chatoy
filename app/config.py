@@ -66,6 +66,10 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
 
+    # After each turn, run a cheap extraction to fold newly stated business
+    # facts into the active project's profile (one small model call per turn).
+    profile_evolution: bool = True
+
     # Force the deterministic offline LLM even when a key is present.
     use_fake_llm: bool = False
 

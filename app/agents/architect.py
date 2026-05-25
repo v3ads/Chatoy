@@ -15,6 +15,7 @@ def make_architect_node(
     llm: LLMClient,
     memory: AssetLog | None = None,
     rag: FrameworkRetriever | None = None,
+    recall=None,
 ) -> Callable[[AgentState], dict]:
     """Build the Growth Architect node.
 
@@ -27,24 +28,32 @@ def make_architect_node(
     def architect_node(state: AgentState) -> dict:
         messages = state.get("messages", [])
         profile = state.get("business_profile", {})
+        project_id = state.get("project_id") or ""
 
         digest = ""
-        user_id = state.get("user_id")
-        if memory is not None and user_id:
-            digest = memory.summarize(user_id)
+        if memory is not None and project_id:
+            digest = memory.summarize(project_id)
+
+        last_user = next(
+            (m["content"] for m in reversed(messages) if m.get("role") == "user"),
+            "",
+        )
+        query = f"{json.dumps(profile)} {last_user}".strip()
 
         knowledge: list[str] = []
         search = getattr(rag, "search", None)
         if search is not None:
-            last_user = next(
-                (m["content"] for m in reversed(messages) if m.get("role") == "user"),
-                "",
-            )
-            query = f"{json.dumps(profile)} {last_user}".strip()
             knowledge = search(query, k=3)
 
+        recalled: list[str] = []
+        if recall is not None and project_id:
+            recalled = recall.recall(project_id, query, k=2)
+
         system = cro_system_prompt(
-            profile, past_assets_digest=digest, knowledge=knowledge
+            profile,
+            past_assets_digest=digest,
+            knowledge=knowledge,
+            recalled=recalled,
         )
         raw = llm.invoke(system, messages)
 

@@ -34,6 +34,7 @@ export default function AdminPage() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [knowledge, setKnowledge] = useState<KnowledgeStatus | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const [kbNotice, setKbNotice] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -76,9 +77,11 @@ export default function AdminPage() {
   async function seed() {
     setSeeding(true);
     setError("");
+    setKbNotice("");
     try {
       const res = await seedKnowledge();
       setKnowledge((k) => ({ ...(k ?? { semantic: true }), count: res.count, semantic: true }));
+      if (!res.ok) setKbNotice(res.reason ?? "Semantic indexing is unavailable right now.");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -187,6 +190,7 @@ export default function AdminPage() {
         >
           {seeding ? "Seeding…" : "Seed / refresh knowledge base"}
         </button>
+        {kbNotice && <p className="mt-3 text-sm text-amber-400">{kbNotice}</p>}
       </section>
     </main>
   );

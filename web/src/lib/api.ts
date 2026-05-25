@@ -251,8 +251,15 @@ export function getKnowledgeStatus(): Promise<KnowledgeStatus> {
   return adminFetch<KnowledgeStatus>("/admin/knowledge");
 }
 
-export function seedKnowledge(): Promise<{ count: number; chunks: number }> {
-  return adminFetch<{ count: number; chunks: number }>("/admin/knowledge/seed", {
+export interface SeedResult {
+  ok: boolean;
+  count: number;
+  chunks: number;
+  reason?: string;
+}
+
+export function seedKnowledge(): Promise<SeedResult> {
+  return adminFetch<SeedResult>("/admin/knowledge/seed", {
     method: "POST",
   });
 }

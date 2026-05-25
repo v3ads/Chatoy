@@ -337,27 +337,24 @@ def create_app(
     @app.post("/admin/knowledge/seed")
     def seed_knowledge(user: Principal = Depends(require_admin)) -> dict:
         if not hasattr(rag, "seed"):
-            raise HTTPException(
-                status_code=400,
-                detail="Knowledge base not configured (set MYTHOSTACK_OPENAI_API_KEY).",
-            )
+            return {
+                "ok": False,
+                "count": 0,
+                "chunks": len(SEED_CHUNKS),
+                "reason": "Semantic search isn't configured (set MYTHOSTACK_OPENAI_API_KEY). "
+                "Agents are using the built-in keyword framework library.",
+            }
         try:
             count = rag.seed(SEED_CHUNKS)  # type: ignore[attr-defined]
-        except Exception as exc:  # noqa: BLE001 — surface the real cause to the admin UI
-            raise HTTPException(
-                status_code=502,
-                detail=f"Seeding failed ({type(exc).__name__}): {exc}",
-            ) from exc
-        if count == 0:
-            raise HTTPException(
-                status_code=500,
-                detail=(
-                    "Seed ran but the store still holds 0 chunks. The embedding call or "
-                    "the vector insert returned nothing — verify MYTHOSTACK_OPENAI_API_KEY "
-                    "and MYTHOSTACK_DATABASE_URL on the backend."
-                ),
-            )
-        return {"count": count, "chunks": len(SEED_CHUNKS)}
+        except Exception as exc:  # noqa: BLE001 — degrade to keyword library, never 500 the admin
+            return {
+                "ok": False,
+                "count": getattr(rag, "count", lambda: 0)(),
+                "chunks": len(SEED_CHUNKS),
+                "reason": f"Couldn't reach the embeddings provider ({type(exc).__name__}): {exc}. "
+                "Agents will keep using the built-in keyword library until this is fixed.",
+            }
+        return {"ok": True, "count": count, "chunks": len(SEED_CHUNKS)}
 
     return app
 

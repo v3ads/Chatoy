@@ -447,8 +447,9 @@ export default function Chat({
           <div className="mx-auto max-w-lg pt-20 text-center">
             <h2 className="text-3xl font-bold text-text-primary">Ready to architect.</h2>
             <p className="mt-4 text-text-secondary leading-relaxed">
-              Brief the architect on your business or the campaign you want to build. 
-              The more context you provide, the more the intelligence compounds.
+              Paste your website and the architect will read it, or just describe your
+              business and the campaign you want to build. The more context you provide,
+              the more the intelligence compounds.
             </p>
           </div>
         )}

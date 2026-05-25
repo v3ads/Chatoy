@@ -54,6 +54,7 @@ def make_architect_node(
             past_assets_digest=digest,
             knowledge=knowledge,
             recalled=recalled,
+            website_content=state.get("website_content", ""),
         )
         raw = llm.invoke(system, messages)
 

@@ -29,6 +29,8 @@ class AgentState(TypedDict, total=False):
     project_id: str
     business_profile: dict
     voice_profile: str
+    website_url: str
+    website_content: str
     current_strategy: dict
     retrieved_frameworks: list[str]
     next_step: Phase

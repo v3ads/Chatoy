@@ -87,6 +87,43 @@ def test_chat_autologs_asset_reports_metrics_and_evolves_profile(client):
     assert "open_rate=55%" in summary
 
 
+class _FakeScraper:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def scrape(self, url: str) -> str:
+        self.calls.append(url)
+        return f"# {url}\nWe sell artisanal cold brew to remote software teams."
+
+
+def test_website_in_message_is_scraped_into_context():
+    scraper = _FakeScraper()
+    app = create_app(
+        Settings(use_fake_llm=True, jwt_secret=TEST_JWT_SECRET), scraper=scraper
+    )
+    c = TestClient(app)
+    h = auth_header("founder")
+    pid = c.post("/projects", json={"name": "Brew"}, headers=h).json()["id"]
+
+    c.post(
+        "/chat",
+        json={"session_id": "s1", "message": "here's my site https://brew.example", "project_id": pid},
+        headers=h,
+    )
+    # The URL was scraped and recorded on the project profile.
+    assert scraper.calls == ["https://brew.example"]
+    profile = c.get(f"/projects/{pid}", headers=h).json()["business_profile"]
+    assert profile["website"] == "https://brew.example"
+
+    # A second turn in the same session does NOT re-scrape (content is cached on state).
+    c.post(
+        "/chat",
+        json={"session_id": "s1", "message": "what should I build?", "project_id": pid},
+        headers=h,
+    )
+    assert scraper.calls == ["https://brew.example"]
+
+
 def test_metrics_update_rejects_foreign_project(client):
     h = auth_header("u")
     pid = client.post("/projects", json={"name": "P"}, headers=h).json()["id"]

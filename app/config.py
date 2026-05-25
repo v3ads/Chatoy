@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
 
+    # Firecrawl scrapes a website the user pastes so the Architect can read the
+    # business straight from their site. Unset → the feature is simply skipped.
+    firecrawl_api_key: str | None = None
+    firecrawl_base_url: str = "https://api.firecrawl.dev"
+
     # After each turn, run a cheap extraction to fold newly stated business
     # facts into the active project's profile (one small model call per turn).
     profile_evolution: bool = True

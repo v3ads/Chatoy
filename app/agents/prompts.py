@@ -10,9 +10,17 @@ def cro_system_prompt(
     past_assets_digest: str = "",
     knowledge: list[str] | None = None,
     recalled: list[str] | None = None,
+    website_content: str = "",
 ) -> str:
     profile = json.dumps(business_profile or {}, indent=2)
     history = past_assets_digest.strip() or "No prior assets logged yet."
+    website_block = (
+        "\n\nContent scraped from the business's own website (read it to understand "
+        "the product, audience and offer — don't ask for what's already here):\n"
+        f"{website_content.strip()}"
+        if website_content and website_content.strip()
+        else ""
+    )
     playbook = (
         "\n".join(f"- {k}" for k in knowledge)
         if knowledge
@@ -31,7 +39,7 @@ highest-leverage growth asset this business needs right now (e.g. email promo, l
 lead magnet, sales page, ad). You diagnose and architect the strategy; you do not write the copy.
 
 Business profile (everything learned about this business so far — never re-ask what's here):
-{profile}
+{profile}{website_block}
 
 Past assets and results ("Compounding Wins" memory — use this to decide the next priority):
 {history}{recall_block}

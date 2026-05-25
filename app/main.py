@@ -42,6 +42,7 @@ from app.llm.resolver import ModelResolver, ResolvingLLM
 from app.services.model_config import ModelConfigStore
 from app.services.knowledge_seed import SEED_CHUNKS
 from app.orchestrator import Orchestrator
+from app.services.firecrawl import FirecrawlClient, build_scraper, extract_first_url
 from app.services.memory import AssetLog, MarketingAsset
 from app.services.profile_extract import evolve_business_profile
 from app.services.projects import Project, ProjectStore, merge_profile
@@ -70,12 +71,14 @@ def create_app(
     model_config_store: ModelConfigStore | None = None,
     project_store: ProjectStore | None = None,
     rag: FrameworkRetriever | None = None,
+    scraper: FirecrawlClient | None = None,
     stripe_service: StripeService | None = None,
     email_service: EmailService | None = None,
     auth: JWTAuth | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     auth = auth or build_auth(settings)
+    scraper = scraper or build_scraper(settings)
 
     if voice_store is None or asset_log is None or session_store is None or credit_store is None:
         default_voice, default_assets, default_sessions, default_credits = build_stores(settings)
@@ -126,6 +129,7 @@ def create_app(
     app.state.model_resolver = resolver
     app.state.project_store = project_store
     app.state.project_recall = recall
+    app.state.scraper = scraper
 
     def current_user(
         creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
@@ -165,6 +169,20 @@ def create_app(
         profile = dict(project.business_profile or {})
         if req.business_profile:
             profile = merge_profile(profile, req.business_profile)
+        # If the user pasted a website, scrape it once (per URL) so the Architect
+        # can read the business straight from their site.
+        if scraper is not None:
+            url = extract_first_url(req.message)
+            if url:
+                if profile.get("website") != url:
+                    profile = merge_profile(profile, {"website": url})
+                    project.business_profile = profile
+                    project_store.update(project.id, business_profile=profile)
+                if state.get("website_url") != url or not state.get("website_content"):
+                    content = scraper.scrape(url)
+                    if content:
+                        state["website_url"] = url
+                        state["website_content"] = content
         state["business_profile"] = profile
         if not state.get("voice_profile") and project.voice_profile:
             state["voice_profile"] = render_voice_profile(project.voice_profile)
@@ -261,7 +279,8 @@ def create_app(
     async def chat_stream(
         req: ChatRequest, user: Principal = Depends(current_user)
     ) -> EventSourceResponse:
-        state, prefix_len, skey, project = _prepare_state(req, user)
+        # _prepare_state may scrape a website (blocking I/O) — keep it off the loop.
+        state, prefix_len, skey, project = await asyncio.to_thread(_prepare_state, req, user)
 
         async def event_gen() -> AsyncIterator[dict]:
             async for kind, payload in orchestrator.stream(state):

@@ -272,6 +272,18 @@ export function seedKnowledge(): Promise<SeedResult> {
   });
 }
 
+// --- Current user ---
+
+export interface Me {
+  user_id: string;
+  email: string | null;
+  is_admin: boolean;
+}
+
+export function getMe(): Promise<Me> {
+  return adminFetch<Me>("/me");
+}
+
 // --- Projects (per-user workspaces) ---
 
 export interface Project {

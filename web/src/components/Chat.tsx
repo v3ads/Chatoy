@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import MobileMenu from "@/components/MobileMenu";
 import AppMenuLinks from "@/components/AppMenuLinks";
+import ProjectModal from "@/components/ProjectModal";
 import {
   ChatMessage,
   FinalPayload,
   MarketingAssetDTO,
   Project,
-  createProject,
   getConfig,
   listAssets,
   listProjects,
@@ -51,6 +51,7 @@ export default function Chat({
   const [projectId, setProjectId] = useState<string>("");
   const [showMemory, setShowMemory] = useState(false);
   const [assets, setAssets] = useState<MarketingAssetDTO[]>([]);
+  const [showProjectModal, setShowProjectModal] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -97,16 +98,10 @@ export default function Chat({
     newChat(); // conversations are per-project — start a fresh thread on switch
   }
 
-  async function makeProject() {
-    const name = window.prompt("Name this project (e.g. a business or brand):");
-    if (!name?.trim()) return;
-    try {
-      const p = await createProject(name.trim());
-      setProjects((ps) => [...ps, p]);
-      selectProject(p.id);
-    } catch (e) {
-      setError((e as Error).message);
-    }
+  function onProjectCreated(p: Project) {
+    setProjects((ps) => [...ps, p]);
+    setShowProjectModal(false);
+    selectProject(p.id);
   }
 
   async function openMemory() {
@@ -255,7 +250,7 @@ export default function Chat({
                     <button
                       onClick={() => {
                         close();
-                        void makeProject();
+                        setShowProjectModal(true);
                       }}
                       className="w-full rounded-lg border border-surface-border px-3 py-2 text-left text-sm font-medium text-text-secondary hover:text-text-primary"
                     >
@@ -314,7 +309,7 @@ export default function Chat({
                 ))}
               </select>
               <button
-                onClick={makeProject}
+                onClick={() => setShowProjectModal(true)}
                 title="New project"
                 className="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-border bg-surface-card text-sm text-text-secondary transition-colors hover:text-text-primary"
               >
@@ -531,6 +526,12 @@ export default function Chat({
           )}
         </button>
       </div>
+
+      <ProjectModal
+        open={showProjectModal}
+        onClose={() => setShowProjectModal(false)}
+        onCreated={onProjectCreated}
+      />
     </main>
   );
 }

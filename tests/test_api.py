@@ -22,6 +22,13 @@ def test_health_is_public(client):
     assert r.json()["offline"] is True
 
 
+def test_me_reports_admin_flag(client):
+    admin = client.get("/me", headers=auth_header("a", email="vipaymanshalaby@gmail.com")).json()
+    assert admin["is_admin"] is True
+    normal = client.get("/me", headers=auth_header("b", email="x@y.com")).json()
+    assert normal["is_admin"] is False
+
+
 def test_chat_diagnose_then_handoff_flow(client):
     h = auth_header("u1")
     r1 = client.post("/chat", json={"session_id": "s1", "message": "I need marketing help"}, headers=h)

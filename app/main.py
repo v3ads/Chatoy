@@ -239,6 +239,14 @@ def create_app(
     def health() -> dict:
         return {"status": "ok", "offline": settings.offline}
 
+    @app.get("/me")
+    def me(user: Principal = Depends(current_user)) -> dict:
+        return {
+            "user_id": user.user_id,
+            "email": user.email,
+            "is_admin": (user.email or "").lower() == settings.admin_email.lower(),
+        }
+
     @app.post("/chat", response_model=ChatResponse)
     def chat(
         req: ChatRequest, user: Principal = Depends(current_user)

@@ -4,9 +4,9 @@ import asyncio
 from typing import AsyncIterator
 
 from app.agents.graph import build_graph
-from app.agents.parsing import HANDOFF_MARKER, MarkerFilter
+from app.agents.parsing import HANDOFF_MARKER, MarkdownStreamFilter, MarkerFilter
 from app.agents.state import AgentState
-from app.llm.base import LLMClient, StreamingTap
+from app.llm.base import ChainFilter, LLMClient, StreamingTap
 from app.services.memory import AssetLog
 from app.services.rag import FrameworkRetriever
 from app.db.factory import CreditStore
@@ -76,8 +76,9 @@ class Orchestrator:
             if text:
                 loop.call_soon_threadsafe(queue.put_nowait, ("token", text))
 
-        def filter_factory() -> MarkerFilter:
-            return MarkerFilter(HANDOFF_MARKER)
+        def filter_factory() -> ChainFilter:
+            # Hide the handoff marker, then strip Markdown tells from the stream.
+            return ChainFilter(MarkerFilter(HANDOFF_MARKER), MarkdownStreamFilter())
 
         cro_tap = StreamingTap(self._cro_llm, sink, filter_factory)
         shepherd_tap = StreamingTap(self._shepherd_llm, sink, filter_factory)

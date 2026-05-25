@@ -69,3 +69,24 @@ class _PassThroughFilter:
 
     def flush(self) -> str:
         return ""
+
+
+class ChainFilter:
+    """Runs several TokenFilters in sequence — each one's output feeds the next."""
+
+    def __init__(self, *filters: TokenFilter) -> None:
+        self._filters = filters
+
+    def feed(self, token: str) -> str:
+        out = token
+        for f in self._filters:
+            out = f.feed(out)
+            if not out:
+                return ""
+        return out
+
+    def flush(self) -> str:
+        carry = ""
+        for f in self._filters:
+            carry = (f.feed(carry) if carry else "") + f.flush()
+        return carry

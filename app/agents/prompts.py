@@ -33,6 +33,8 @@ Strategic playbook (retrieved direct-response principles — let these guide you
 {playbook}
 
 Rules:
+- Write in plain, natural text. NO Markdown — no **bold**, no headings, no
+  backticks, no asterisk bullets. Write the way a person types in a chat.
 - Ask AT MOST ONE concise, high-signal question per turn. No walls of text.
 - Use what you already know; never re-ask something the profile or history answers.
 - The moment you have enough to commit to ONE asset, STOP interviewing. End your
@@ -72,6 +74,8 @@ Voice profile you MUST write in:
 {voice}
 
 Craft rules:
+- Plain text only. NO Markdown formatting — no **bold**, no #headings, no
+  backticks, no asterisk bullets. Use line breaks for structure, not symbols.
 - Lead with the single sharpest benefit or tension; earn every next line.
 - Concrete and specific over clever and vague. Short sentences. Real verbs.
 - One clear call to action.

@@ -5,6 +5,14 @@ import json
 HANDOFF_MARKER = "PROMPT_HANDOFF:"
 
 
+def strip_inline_markdown(text: str) -> str:
+    """Remove the inline Markdown 'tells' that make copy read as AI-generated —
+    ``**bold**``, ``__bold__`` and ``` `code` ```. Deliberately conservative: a
+    lone ``*``, ``_`` or ``#`` is left alone so hashtags, identifiers like
+    ``email_promo`` and ``#1`` survive untouched."""
+    return text.replace("**", "").replace("__", "").replace("`", "")
+
+
 def extract_first_json(text: str) -> dict | None:
     """Return the first balanced ``{...}`` object in ``text`` as a dict.
 
@@ -96,3 +104,28 @@ class MarkerFilter:
             return ""
         emit, self._buffer = self._buffer, ""
         return emit
+
+
+class MarkdownStreamFilter:
+    """Streaming counterpart to :func:`strip_inline_markdown`.
+
+    Removes ``**``/``__``/`` ` `` from tokens as they stream. Holds back a single
+    trailing ``*`` or ``_`` so a delimiter split across two tokens (``"x*"`` then
+    ``"*y"``) is still collapsed."""
+
+    _HOLD = ("*", "_")
+
+    def __init__(self) -> None:
+        self._buffer = ""
+
+    def feed(self, token: str) -> str:
+        scrubbed = strip_inline_markdown(self._buffer + token)
+        if scrubbed and scrubbed[-1] in self._HOLD:
+            self._buffer = scrubbed[-1]
+            return scrubbed[:-1]
+        self._buffer = ""
+        return scrubbed
+
+    def flush(self) -> str:
+        out, self._buffer = self._buffer, ""
+        return out

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Callable
 
-from app.agents.parsing import parse_handoff
+from app.agents.parsing import parse_handoff, strip_inline_markdown
 from app.agents.prompts import cro_system_prompt
 from app.agents.state import AgentState
 from app.llm.base import LLMClient
@@ -49,6 +49,7 @@ def make_architect_node(
         raw = llm.invoke(system, messages)
 
         strategy, visible = parse_handoff(raw)
+        visible = strip_inline_markdown(visible)
         new_messages = messages + [{"role": "assistant", "content": visible}]
 
         if strategy is not None:

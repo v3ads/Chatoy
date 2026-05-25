@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Callable
 
+from app.agents.parsing import strip_inline_markdown
 from app.agents.prompts import shepherd_system_prompt
 from app.agents.state import AgentState, Message
 from app.llm.base import LLMClient
@@ -44,7 +45,7 @@ def make_writer_node(
             )
 
         system = shepherd_system_prompt(strategy, voice, frameworks)
-        copy = llm.invoke(system, _ensure_user_turn(messages))
+        copy = strip_inline_markdown(llm.invoke(system, _ensure_user_turn(messages)))
 
         new_messages = messages + [{"role": "assistant", "content": copy}]
         return {

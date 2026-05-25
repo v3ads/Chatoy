@@ -22,6 +22,26 @@ def test_health_is_public(client):
     assert r.json()["offline"] is True
 
 
+def test_cors_preflight_allows_apex_www_and_vercel(client):
+    # The /chat/stream preflight must succeed for the apex domain, www, and Vercel
+    # previews — a 400 here is what breaks the browser chat + admin calls.
+    for origin in (
+        "https://mythostack.com",
+        "https://www.mythostack.com",
+        "https://chatoy-jvj0hqaax-v3ads-projects.vercel.app",
+    ):
+        r = client.options(
+            "/chat/stream",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+        assert r.status_code in (200, 204), (origin, r.status_code)
+        assert r.headers.get("access-control-allow-origin") == origin
+
+
 def test_me_reports_admin_flag(client):
     admin = client.get("/me", headers=auth_header("a", email="vipaymanshalaby@gmail.com")).json()
     assert admin["is_admin"] is True

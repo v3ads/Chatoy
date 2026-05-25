@@ -74,6 +74,12 @@ class Settings(BaseSettings):
     use_fake_llm: bool = False
 
     cors_origins: str = "http://localhost:3000,https://mythostack.com"
+    # Regex (full-match) for additional allowed browser origins: the apex domain
+    # and any subdomain of mythostack.com (e.g. www), plus Vercel preview builds.
+    # A too-narrow origin list is what rejects the /chat/stream CORS preflight.
+    cors_origin_regex: str = (
+        r"https://([a-z0-9-]+\.)*mythostack\.com|https://[a-z0-9-]+\.vercel\.app"
+    )
 
     @property
     def offline(self) -> bool:

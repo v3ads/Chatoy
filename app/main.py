@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import AsyncIterator
@@ -259,7 +260,11 @@ def create_app(
                 elif kind == "error":
                     yield {"event": "error", "data": str(payload)}
                 elif kind == "final":
-                    resp = _finish(req, payload, prefix_len, skey, project)  # type: ignore[arg-type]
+                    # _finish persists state and runs the learning loop (incl. a
+                    # model call) — keep that off the event loop.
+                    resp = await asyncio.to_thread(
+                        _finish, req, payload, prefix_len, skey, project  # type: ignore[arg-type]
+                    )
                     yield {"event": "final", "data": resp.model_dump_json()}
             yield {"event": "done", "data": "[DONE]"}
 

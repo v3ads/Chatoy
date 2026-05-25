@@ -96,6 +96,7 @@ export async function streamChat(
   input: {
     sessionId: string;
     message: string;
+    projectId?: string | null;
     businessProfile?: Record<string, unknown> | null;
   },
   handlers: StreamHandlers,
@@ -110,6 +111,7 @@ export async function streamChat(
       body: JSON.stringify({
         session_id: input.sessionId,
         message: input.message,
+        project_id: input.projectId ?? undefined,
         business_profile: input.businessProfile ?? undefined,
       }),
       signal: handlers.signal,
@@ -166,23 +168,29 @@ export interface VoiceProfileResponse {
   rendered: string;
 }
 
-export async function getVoiceProfile(): Promise<VoiceProfileResponse | null> {
+export async function getVoiceProfile(
+  projectId?: string | null,
+): Promise<VoiceProfileResponse | null> {
   const { apiUrl } = getConfig();
   const token = await getAccessToken();
-  const res = await fetch(`${apiUrl}/voice/me`, {
+  const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+  const res = await fetch(`${apiUrl}/voice/me${qs}`, {
     headers: authHeaders(token),
   });
   if (!res.ok) return null;
   return res.json();
 }
 
-export async function analyzeVoice(samples: string[]): Promise<VoiceProfileResponse> {
+export async function analyzeVoice(
+  samples: string[],
+  projectId?: string | null,
+): Promise<VoiceProfileResponse> {
   const { apiUrl } = getConfig();
   const token = await getAccessToken();
   const res = await fetch(`${apiUrl}/voice/analyze`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ samples }),
+    body: JSON.stringify({ samples, project_id: projectId ?? undefined }),
   });
   if (!res.ok) {
     const body = await res.json();
@@ -261,5 +269,76 @@ export interface SeedResult {
 export function seedKnowledge(): Promise<SeedResult> {
   return adminFetch<SeedResult>("/admin/knowledge/seed", {
     method: "POST",
+  });
+}
+
+// --- Projects (per-user workspaces) ---
+
+export interface Project {
+  id: string;
+  name: string;
+  business_profile: Record<string, unknown>;
+  voice_profile: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export function listProjects(): Promise<Project[]> {
+  return adminFetch<Project[]>("/projects");
+}
+
+export function createProject(name: string): Promise<Project> {
+  return adminFetch<Project>("/projects", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function updateProject(
+  id: string,
+  body: { name?: string; business_profile?: Record<string, unknown> },
+): Promise<Project> {
+  return adminFetch<Project>(`/projects/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteProject(id: string): Promise<{ status: string; id: string }> {
+  return adminFetch(`/projects/${id}`, { method: "DELETE" });
+}
+
+// --- Assets (compounding-wins memory) ---
+
+export interface MarketingAssetDTO {
+  id: number | null;
+  user_id: string;
+  project_id: string;
+  asset_type: string;
+  marketing_angle: string;
+  content: string;
+  metrics: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AssetList {
+  user_id: string;
+  project_id: string;
+  assets: MarketingAssetDTO[];
+  summary: string;
+}
+
+export function listAssets(projectId: string): Promise<AssetList> {
+  return adminFetch<AssetList>(`/assets?project_id=${encodeURIComponent(projectId)}`);
+}
+
+export function reportAssetMetrics(
+  assetId: number,
+  metrics: Record<string, unknown>,
+  projectId: string,
+): Promise<MarketingAssetDTO> {
+  return adminFetch<MarketingAssetDTO>(`/assets/${assetId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ metrics, project_id: projectId }),
   });
 }

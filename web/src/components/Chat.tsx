@@ -5,10 +5,18 @@ import Link from "next/link";
 import {
   ChatMessage,
   FinalPayload,
+  MarketingAssetDTO,
+  Project,
+  createProject,
   getConfig,
+  listAssets,
+  listProjects,
+  reportAssetMetrics,
   setConfig,
   streamChat,
 } from "@/lib/api";
+
+const PROJECT_KEY = "mythostack.projectId";
 
 const PHASE_LABEL: Record<string, string> = {
   diagnose: "Analyzing Business",
@@ -37,6 +45,11 @@ export default function Chat({
   const [token, setToken] = useState("");
   const [profileText, setProfileText] = useState("");
 
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectId, setProjectId] = useState<string>("");
+  const [showMemory, setShowMemory] = useState(false);
+  const [assets, setAssets] = useState<MarketingAssetDTO[]>([]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,6 +71,72 @@ export default function Chat({
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
+
+  // Load the user's projects and select the active one (last used, else first).
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await listProjects();
+        setProjects(list);
+        const saved = typeof window !== "undefined" ? localStorage.getItem(PROJECT_KEY) : null;
+        const active = list.find((p) => p.id === saved)?.id ?? list[0]?.id ?? "";
+        setProjectId(active);
+      } catch {
+        /* projects are best-effort in the header; chat still works on the default */
+      }
+    })();
+  }, []);
+
+  function selectProject(id: string) {
+    if (!id || id === projectId) return;
+    setProjectId(id);
+    if (typeof window !== "undefined") localStorage.setItem(PROJECT_KEY, id);
+    setShowMemory(false);
+    newChat(); // conversations are per-project — start a fresh thread on switch
+  }
+
+  async function makeProject() {
+    const name = window.prompt("Name this project (e.g. a business or brand):");
+    if (!name?.trim()) return;
+    try {
+      const p = await createProject(name.trim());
+      setProjects((ps) => [...ps, p]);
+      selectProject(p.id);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function openMemory() {
+    const next = !showMemory;
+    setShowMemory(next);
+    if (next && projectId) {
+      try {
+        setAssets((await listAssets(projectId)).assets);
+      } catch {
+        setAssets([]);
+      }
+    }
+  }
+
+  async function reportMetric(asset: MarketingAssetDTO) {
+    if (asset.id == null) return;
+    const entry = window.prompt(
+      "Report a result for this asset (e.g. open_rate=42% or revenue=1200):",
+    );
+    if (!entry?.includes("=")) return;
+    const [key, ...rest] = entry.split("=");
+    try {
+      const updated = await reportAssetMetrics(
+        asset.id,
+        { [key.trim()]: rest.join("=").trim() },
+        projectId,
+      );
+      setAssets((as) => as.map((a) => (a.id === updated.id ? updated : a)));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   function newChat() {
     setSessionId(crypto.randomUUID());
@@ -101,7 +180,7 @@ export default function Chat({
       });
 
     await streamChat(
-      { sessionId, message: text, businessProfile },
+      { sessionId, message: text, projectId: projectId || undefined, businessProfile },
       {
         onToken: appendToLast,
         onFinal: (payload: FinalPayload) => {
@@ -158,6 +237,29 @@ export default function Chat({
               {PHASE_LABEL[phase] ?? phase}
             </span>
           </div>
+          {projects.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <select
+                value={projectId}
+                onChange={(e) => selectProject(e.target.value)}
+                title="Switch project — each keeps its own profile, voice, assets and memory"
+                className="max-w-[10rem] rounded-lg border border-surface-border bg-surface-card px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-accent"
+              >
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={makeProject}
+                title="New project"
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-border bg-surface-card text-sm text-text-secondary transition-colors hover:text-text-primary"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Link
@@ -166,6 +268,12 @@ export default function Chat({
           >
             Voice
           </Link>
+          <button
+            onClick={openMemory}
+            className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
+          >
+            Memory
+          </button>
           <button
             onClick={newChat}
             className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
@@ -229,6 +337,57 @@ export default function Chat({
               Apply Configuration
             </button>
           </div>
+        </section>
+      )}
+
+      {showMemory && (
+        <section className="mt-4 rounded-xl border border-surface-border bg-surface-card p-6 shadow-xl">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
+              Project memory — past assets
+            </span>
+            <button
+              onClick={() => setShowMemory(false)}
+              className="text-xs text-text-muted hover:text-text-primary"
+            >
+              Close
+            </button>
+          </div>
+          {assets.length === 0 ? (
+            <p className="text-sm text-text-muted">
+              No assets yet. Build one and it&apos;s logged here automatically — report its
+              results to make the next recommendation smarter.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {assets.map((a) => (
+                <li
+                  key={a.id ?? a.created_at}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-surface-border bg-surface px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-text-primary">
+                      {a.asset_type.replace(/_/g, " ")}
+                      {a.marketing_angle ? ` — ${a.marketing_angle}` : ""}
+                    </div>
+                    <div className="truncate text-xs text-text-muted">
+                      {Object.keys(a.metrics).length
+                        ? Object.entries(a.metrics)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join("  ·  ")
+                        : "no results reported yet"}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => void reportMetric(a)}
+                    className="shrink-0 rounded-lg border border-surface-border px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary"
+                  >
+                    Report result
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 

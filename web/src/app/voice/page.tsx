@@ -31,9 +31,15 @@ export default function VoicePage() {
     });
   }, [router]);
 
+  // Voice is per-project; the chat header records the active project here.
+  function activeProjectId(): string | undefined {
+    if (typeof window === "undefined") return undefined;
+    return localStorage.getItem("mythostack.projectId") || undefined;
+  }
+
   async function fetchProfile() {
     try {
-      const data = await getVoiceProfile();
+      const data = await getVoiceProfile(activeProjectId());
       setProfile(data);
     } catch (err) {
       console.error("Failed to fetch profile", err);
@@ -52,7 +58,7 @@ export default function VoicePage() {
     setBusy(true);
     setError("");
     try {
-      const data = await analyzeVoice(validSamples);
+      const data = await analyzeVoice(validSamples, activeProjectId());
       setProfile(data);
     } catch (err) {
       setError((err as Error).message);

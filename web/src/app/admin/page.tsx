@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import MobileMenu from "@/components/MobileMenu";
+import AppMenuLinks from "@/components/AppMenuLinks";
 import {
   AvailableModel,
   KnowledgeStatus,
@@ -108,12 +110,17 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <div className="flex items-center justify-between">
+    <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-12">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Model settings</h1>
-        <Link href="/chat" className="text-sm text-text-secondary hover:text-text-primary">
-          ← Back to app
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/chat" className="hidden text-sm text-text-secondary hover:text-text-primary lg:inline">
+            ← Back to app
+          </Link>
+          <div className="lg:hidden">
+            <MobileMenu>{(close) => <AppMenuLinks onNavigate={close} />}</MobileMenu>
+          </div>
+        </div>
       </div>
       <p className="mt-2 text-sm text-text-muted">
         Choose the OpenRouter model for each agent. Leave on “Default (Claude)” to use the

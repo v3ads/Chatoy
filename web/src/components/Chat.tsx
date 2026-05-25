@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import MobileMenu from "@/components/MobileMenu";
+import AppMenuLinks from "@/components/AppMenuLinks";
 import {
   ChatMessage,
   FinalPayload,
@@ -225,20 +227,80 @@ export default function Chat({
   }
 
   return (
-    <main className="mx-auto flex h-screen max-w-4xl flex-col bg-surface px-6">
-      <header className="flex items-center justify-between border-b border-surface-border py-6">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-2xl font-bold tracking-tight text-text-primary">
+    <main className="mx-auto flex h-screen max-w-4xl flex-col bg-surface px-4 sm:px-6">
+      <header className="flex items-center justify-between gap-3 border-b border-surface-border py-4 lg:py-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          <MobileMenu>
+            {(close) => (
+              <div className="flex flex-col gap-4">
+                {projects.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                      Project
+                    </span>
+                    <select
+                      value={projectId}
+                      onChange={(e) => {
+                        selectProject(e.target.value);
+                        close();
+                      }}
+                      className="w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm font-medium text-text-primary outline-none focus:border-accent"
+                    >
+                      {projects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        close();
+                        void makeProject();
+                      }}
+                      className="w-full rounded-lg border border-surface-border px-3 py-2 text-left text-sm font-medium text-text-secondary hover:text-text-primary"
+                    >
+                      + New project
+                    </button>
+                  </div>
+                )}
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => {
+                      close();
+                      void openMemory();
+                    }}
+                    className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-border hover:text-text-primary"
+                  >
+                    Memory
+                  </button>
+                  <button
+                    onClick={() => {
+                      close();
+                      newChat();
+                    }}
+                    className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-border hover:text-text-primary"
+                  >
+                    New Session
+                  </button>
+                </div>
+                <div className="border-t border-surface-border pt-3">
+                  <AppMenuLinks onNavigate={close} />
+                </div>
+              </div>
+            )}
+          </MobileMenu>
+
+          <Link href="/" className="shrink-0 text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
             Mytho<span className="text-accent">Stack</span>
           </Link>
-          <div className="flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1">
+          <div className="hidden items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 sm:flex">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
               {PHASE_LABEL[phase] ?? phase}
             </span>
           </div>
           {projects.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="hidden items-center gap-1.5 lg:flex">
               <select
                 value={projectId}
                 onChange={(e) => selectProject(e.target.value)}
@@ -261,7 +323,7 @@ export default function Chat({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="hidden items-center gap-3 lg:flex">
           <Link
             href="/voice"
             className="rounded-lg border border-surface-border bg-surface-card px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-primary transition-colors hover:bg-surface-border"
@@ -363,7 +425,7 @@ export default function Chat({
               {assets.map((a) => (
                 <li
                   key={a.id ?? a.created_at}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-surface-border bg-surface px-3 py-2"
+                  className="flex flex-col gap-2 rounded-lg border border-surface-border bg-surface px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-text-primary">
@@ -380,7 +442,7 @@ export default function Chat({
                   </div>
                   <button
                     onClick={() => void reportMetric(a)}
-                    className="shrink-0 rounded-lg border border-surface-border px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary"
+                    className="shrink-0 self-start rounded-lg border border-surface-border px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary sm:self-auto"
                   >
                     Report result
                   </button>

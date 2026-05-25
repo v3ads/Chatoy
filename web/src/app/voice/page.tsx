@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { analyzeVoice, getVoiceProfile, VoiceProfileResponse } from "@/lib/api";
+import MobileMenu from "@/components/MobileMenu";
+import AppMenuLinks from "@/components/AppMenuLinks";
 
 export default function VoicePage() {
   const router = useRouter();
@@ -82,16 +84,19 @@ export default function VoicePage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl bg-surface px-6 py-12">
-      <header className="mb-12 flex items-center justify-between">
+    <main className="mx-auto min-h-screen max-w-4xl bg-surface px-4 py-10 sm:px-6 sm:py-12">
+      <header className="mb-10 flex items-start justify-between gap-3 sm:mb-12">
         <div>
           <Link href="/chat" className="text-sm font-bold uppercase tracking-widest text-accent hover:text-accent-dim">
             ← Back to Architect
           </Link>
-          <h1 className="mt-4 text-4xl font-bold text-text-primary">Voice Training</h1>
+          <h1 className="mt-4 text-3xl font-bold text-text-primary sm:text-4xl">Voice Training</h1>
           <p className="mt-2 text-text-secondary">
             Teach the Asset Engine how you write so it can build campaigns that sound like you.
           </p>
+        </div>
+        <div className="lg:hidden">
+          <MobileMenu>{(close) => <AppMenuLinks onNavigate={close} />}</MobileMenu>
         </div>
       </header>
 

@@ -1,6 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import MobileMenu from "@/components/MobileMenu";
+
+const LINKS = [
+  { href: "/#how", label: "How it works" },
+  { href: "/#pricing", label: "Pricing" },
+  { href: "/voice", label: "Voice" },
+  { href: "/login", label: "Log in" },
+];
 
 export default function Nav() {
   return (
@@ -10,18 +18,42 @@ export default function Nav() {
           Mytho<span className="text-accent">Stack</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm font-medium text-text-secondary md:flex">
-          <Link href="/#how" className="hover:text-text-primary transition-colors">How it works</Link>
-          <Link href="/#pricing" className="hover:text-text-primary transition-colors">Pricing</Link>
-          <Link href="/voice" className="hover:text-text-primary transition-colors">Voice</Link>
-          <Link href="/login" className="hover:text-text-primary transition-colors">Log in</Link>
+          {LINKS.map((l) => (
+            <Link key={l.href} href={l.href} className="hover:text-text-primary transition-colors">
+              {l.label}
+            </Link>
+          ))}
           <Link href="/login" className="rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-surface transition-colors hover:bg-accent-dim">
             Get Early Access
           </Link>
         </nav>
-        <Link href="/login" className="rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-surface md:hidden">
-          Join Waitlist
-        </Link>
+        <div className="md:hidden">
+          <MobileMenu triggerClassName="border-white/10">
+            {(close) => (
+              <nav className="flex flex-col gap-1">
+                {LINKS.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={close}
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-border hover:text-text-primary"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+                <Link
+                  href="/login"
+                  onClick={close}
+                  className="mt-2 rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-surface transition-colors hover:bg-accent-dim"
+                >
+                  Get Early Access
+                </Link>
+              </nav>
+            )}
+          </MobileMenu>
+        </div>
       </div>
     </header>
   );
 }
+

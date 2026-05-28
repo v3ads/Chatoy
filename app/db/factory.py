@@ -15,11 +15,14 @@ class CreditStore(Protocol):
     def deduct(self, user_id: str, amount: float) -> float: ...
     def add(self, user_id: str, amount: float) -> float: ...
     def set_auto_recharge(self, user_id: str, enabled: bool) -> None: ...
+    def set_customer(self, user_id: str, customer_id: str) -> None: ...
+    def user_for_customer(self, customer_id: str) -> str | None: ...
 
 class InMemoryCreditStore:
     def __init__(self) -> None:
         self._credits = {}
         self._auto = {}
+        self._customer_to_user = {}
 
     def get(self, user_id: str, email: str | None = None):
         from app.db.models import CreditProfileRow
@@ -51,6 +54,12 @@ class InMemoryCreditStore:
 
     def set_auto_recharge(self, user_id: str, enabled: bool) -> None:
         self._auto[user_id] = enabled
+
+    def set_customer(self, user_id: str, customer_id: str) -> None:
+        self._customer_to_user[customer_id] = user_id
+
+    def user_for_customer(self, customer_id: str) -> str | None:
+        return self._customer_to_user.get(customer_id)
 
 
 def build_stores(

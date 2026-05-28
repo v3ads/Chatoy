@@ -108,6 +108,28 @@ def test_voice_analyze_and_get(client):
     assert client.get("/voice/me", headers=auth_header("nobody")).status_code == 404
 
 
+def test_generating_an_asset_deducts_a_credit(client):
+    h = auth_header("spender", email="spender@example.com")
+    before = client.get("/credits", headers=h).json()["credits_balance"]
+    # Turn 1: diagnosis — no asset, no charge.
+    client.post("/chat", json={"session_id": "c", "message": "grow me"}, headers=h)
+    mid = client.get("/credits", headers=h).json()["credits_balance"]
+    assert mid == before
+    # Turn 2: hands off and writes an asset — one credit is consumed.
+    r = client.post("/chat", json={"session_id": "c", "message": "more signups"}, headers=h)
+    assert r.json()["next_step"] == "refine"
+    after = client.get("/credits", headers=h).json()["credits_balance"]
+    assert after == before - 1
+
+
+def test_admin_is_not_charged_for_assets(client):
+    h = auth_header("boss", email="vipaymanshalaby@gmail.com")
+    client.post("/chat", json={"session_id": "c", "message": "grow me"}, headers=h)
+    client.post("/chat", json={"session_id": "c", "message": "more signups"}, headers=h)
+    # Admin is god-mode: balance stays effectively unlimited.
+    assert client.get("/credits", headers=h).json()["credits_balance"] >= 100000
+
+
 def test_billing_checkout_400_when_stripe_unconfigured(client):
     h = auth_header("u4")
     # No Stripe key in the test settings → graceful 400, never a crash.

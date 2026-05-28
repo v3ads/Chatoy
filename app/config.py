@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str | None = None
     stripe_pro_price_id: str | None = None
     stripe_credit_pack_price_id: str | None = None
+    # Credit economy: how much each generated asset costs, and how many credits a
+    # credit-pack purchase / a Pro month grants.
+    credit_cost_per_asset: float = 1.0
+    credit_pack_credits: int = 50
+    pro_monthly_credits: int = 100
 
     # SQLAlchemy URL, e.g. postgresql+psycopg://user:pass@host:5432/chatoy
     # Leave unset to use the in-memory stores (tests / offline dev).

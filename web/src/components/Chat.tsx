@@ -6,6 +6,7 @@ import MobileMenu from "@/components/MobileMenu";
 import AppMenuLinks from "@/components/AppMenuLinks";
 import AccountChip from "@/components/AccountChip";
 import ProjectModal from "@/components/ProjectModal";
+import { CREDITS_EVENT } from "@/lib/useAccount";
 import {
   ChatMessage,
   FinalPayload,
@@ -179,6 +180,10 @@ export default function Chat({
           setPhase(payload.next_step);
           setStrategy(payload.current_strategy);
           setFrameworks(payload.retrieved_frameworks ?? []);
+          // Refresh the credit balance shown in the header/drawer.
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event(CREDITS_EVENT));
+          }
           if (payload.reply) {
             setMessages((m) => {
               const copy = [...m];
@@ -189,7 +194,9 @@ export default function Chat({
         },
         onError: (message: string) => {
           let userMessage = message;
-          if (message.includes("503")) {
+          if (message.toLowerCase().includes("credit")) {
+            userMessage = "You're out of credits. Add more from your account to keep generating.";
+          } else if (message.includes("503")) {
             userMessage = "The architect is temporarily offline. Retrying...";
           } else if (message.includes("401")) {
             userMessage = "Session expired. Please log in again.";

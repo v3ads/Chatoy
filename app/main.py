@@ -217,6 +217,13 @@ def create_app(
                 )
                 if recall is not None:
                     recall.remember(project.id, asset_type, content)
+                # Meter usage: each generated asset costs credits (admin is exempt).
+                is_admin = (final.get("user_email") or "").lower() == settings.admin_email.lower()
+                if not is_admin and final.get("user_id"):
+                    try:
+                        credit_store.deduct(final["user_id"], settings.credit_cost_per_asset)
+                    except Exception:  # noqa: BLE001 — metering must not break the turn
+                        pass
 
         # (#3) Fold newly stated facts (and any locked strategy) into the profile.
         if settings.profile_evolution:

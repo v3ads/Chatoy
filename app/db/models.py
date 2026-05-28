@@ -66,6 +66,7 @@ class CreditProfileRow(Base):
     user_id: Mapped[str] = mapped_column(String(255), primary_key=True)
     credits_balance: Mapped[float] = mapped_column(Float, default=10.0)  # Initial free credits
     auto_recharge_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), index=True, nullable=True)
     updated_at: Mapped[str] = mapped_column(String(40), default=_now_iso, onupdate=_now_iso)
 
 

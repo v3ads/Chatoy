@@ -82,14 +82,23 @@ class StripeService:
         except stripe.error.SignatureVerificationError:
             return {"status": "error", "message": "Invalid signature"}
 
-        if event["type"] == "checkout.session.completed":
-            session = event["data"]["object"]
-            self._process_session(session)
+        etype = event["type"]
+        if etype == "checkout.session.completed":
+            self._process_session(event["data"]["object"])
+        elif etype == "invoice.payment_succeeded":
+            self._process_invoice(event["data"]["object"])
 
         return {"status": "success"}
 
     def _process_session(self, session):
         user_id = session.get("client_reference_id")
+        customer_id = session.get("customer")
+        # Remember the Stripe customer so subscription renewals can find the user.
+        if user_id and customer_id:
+            try:
+                self.credit_store.set_customer(user_id, customer_id)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("set_customer failed: %s", exc)
         if not user_id:
             return
 
@@ -97,12 +106,25 @@ class StripeService:
         for item in line_items.data:
             price_id = item.price.id
             if price_id == self.settings.stripe_credit_pack_price_id:
-                # Add 50 credits for $10 pack
-                self.credit_store.add(user_id, 50.0)
+                self.credit_store.add(user_id, float(self.settings.credit_pack_credits))
             elif price_id == self.settings.stripe_pro_price_id:
-                # Pro plan might come with a starting balance or just unlock unlimited
-                # For now, let\'s give them a 100 credit boost
-                self.credit_store.add(user_id, 100.0)
+                self.credit_store.add(user_id, float(self.settings.pro_monthly_credits))
+
+    def _process_invoice(self, invoice):
+        # Only recurring renewals — the first subscription payment is already
+        # granted via checkout.session.completed.
+        if invoice.get("billing_reason") != "subscription_cycle":
+            return
+        customer_id = invoice.get("customer")
+        if not customer_id:
+            return
+        user_id = self.credit_store.user_for_customer(customer_id)
+        if not user_id:
+            return
+        for line in (invoice.get("lines") or {}).get("data") or []:
+            if (line.get("price") or {}).get("id") == self.settings.stripe_pro_price_id:
+                self.credit_store.add(user_id, float(self.settings.pro_monthly_credits))
+                break
 
     def trigger_auto_recharge(self, user_id: str, customer_id: str):
         """Automatically charge the customer $10 and add 50 credits."""

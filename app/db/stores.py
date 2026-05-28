@@ -160,6 +160,24 @@ class SqlCreditStore:
             if row is None:
                 row = CreditProfileRow(user_id=user_id)
                 session.add(row)
-            
+
             row.auto_recharge_enabled = enabled
             session.commit()
+
+    def set_customer(self, user_id: str, customer_id: str) -> None:
+        with self._sf() as session:
+            row = session.get(CreditProfileRow, user_id)
+            if row is None:
+                row = CreditProfileRow(user_id=user_id)
+                session.add(row)
+            row.stripe_customer_id = customer_id
+            session.commit()
+
+    def user_for_customer(self, customer_id: str) -> str | None:
+        with self._sf() as session:
+            row = session.scalars(
+                select(CreditProfileRow).where(
+                    CreditProfileRow.stripe_customer_id == customer_id
+                )
+            ).first()
+            return row.user_id if row is not None else None
